@@ -13,6 +13,7 @@ public class WebService : MonoBehaviour
 
     private Discovery discovery;
     private Register register;
+    private WebSocketClient webSocketClient;
 
 
     void Start()
@@ -24,22 +25,24 @@ public class WebService : MonoBehaviour
     void Update()
     {
         // Has discovery phase ended?
-        if (!discovery.Running())
+        if (discovery != null && !discovery.Running())
         {
             GingaCCWSLocation = discovery.GetLocation();
             discovery = null;
-
+            
             register = new Register(GingaCCWSLocation);
             StartCoroutine(register.SendMessage());
         }
 
-        
+
         // Has register phase ended?
-        if (!register.Running())
+        if (register != null && !register.Running())
         {
             WebSocketHandle = register.GetHandle();
             WebSocketURL = register.GetURL();
             register = null;
+
+            webSocketClient = new WebSocketClient(WebSocketURL);
         }
     }
 }
