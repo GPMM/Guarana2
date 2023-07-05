@@ -1,0 +1,7 @@
+Assets
++---Guarana
+| +---Document   : Scene representation
+| +---Formatter  : Scene rendering control (Parser, Scheduler)
+| +---Players    : Handle each media type
+| +---WebService : Guarana Webservice (SSDP Discovery, WebSocket Client, Ginga CC-WS Register)
+| +---Docs       : Project documentation

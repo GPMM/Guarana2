@@ -5,25 +5,15 @@ using UnityEngine.Networking;
 public class Register
 {
     private string baseLocation, msgType, msgBody;
-	private bool running;
-
-	private class RegisterResponse
-	{
-		public string handle;
-		public string url;
-	}
 	private RegisterResponse response;
+	private bool running;
 
 
 	public Register(string loc)
     {
         baseLocation = loc + "/remote-device";
         msgType = "application/json";
-        msgBody = "{" +
-                "\"deviceClass\": \"Guarana\"," +
-                "\"supportedFormats\": [\"application/x-ncl360\"]," +
-                "\"recognizableEvents\": [\"selection\",\"look\"]" +
-                "}";
+		msgBody = JsonUtility.ToJson(new RegisterMessage());
 
 		running = true;
     }
@@ -36,13 +26,13 @@ public class Register
 			yield return wr.SendWebRequest();
 			if (wr.result != UnityWebRequest.Result.Success)
 			{
-				Debug.Log(wr.error);
+				WebServiceUI.Log(wr.error);
 			}
 			else
 			{
-				Debug.Log("Register upload complete!");
+				WebServiceUI.Log("Register upload complete!\n");
 				var text = wr.downloadHandler.text;
-				Debug.Log(text);
+				WebServiceUI.Log(text + "\n");
 				response = JsonUtility.FromJson<RegisterResponse>(text);
 				running = false;
 			}

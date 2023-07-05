@@ -1,6 +1,4 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.Networking;
 
 public class WebService : MonoBehaviour
 {
@@ -18,6 +16,8 @@ public class WebService : MonoBehaviour
 
     void Start()
     {
+        WebServiceUI.Log("Starting Web Service...\n");
+
         discovery = new MockDiscovery();
     }
 
@@ -29,6 +29,7 @@ public class WebService : MonoBehaviour
         {
             GingaCCWSLocation = discovery.GetLocation();
             discovery = null;
+            WebServiceUI.Log("Ginga at "+ GingaCCWSLocation + "\n");
             
             register = new Register(GingaCCWSLocation);
             StartCoroutine(register.SendMessage());
@@ -41,8 +42,16 @@ public class WebService : MonoBehaviour
             WebSocketHandle = register.GetHandle();
             WebSocketURL = register.GetURL();
             register = null;
+            WebServiceUI.Log("Ginga at " + WebSocketURL + " my handle: " + WebSocketHandle + "\n");
 
             webSocketClient = new WebSocketClient(WebSocketURL);
+        }
+
+
+        // Check if socket is connected
+        if (webSocketClient != null && webSocketClient.Running())
+        {
+            WebServiceUI.Clear();
         }
     }
 }

@@ -1,6 +1,6 @@
-using UnityEngine;
 using System;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 
 public class MockDiscovery : Discovery
@@ -10,25 +10,41 @@ public class MockDiscovery : Discovery
 	private bool keepRunning;
 
     private int port = 65333;
-	
+
 
     public MockDiscovery()
     {
+        WebServiceUI.Log("Creating http listener...\n");
         listener = new HttpListener();
+        port = FreeTcpPort();
         listener.Prefixes.Add("http://+:" + port + "/");
         listener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
-        listener.Start();
 
-		listenerThread = new Thread(startListener);
+        listener.Start();
+        WebServiceUI.Log("... listener is on.\n");
+
+        listenerThread = new Thread(startListener);
         listenerThread.Start();
-        Debug.Log("Http listener Started");
+        WebServiceUI.Log("Thread is running...");
+    }
+
+
+    static int FreeTcpPort()
+    {
+        WebServiceUI.Log("gathering free TCP port... ");
+        TcpListener l = new TcpListener(IPAddress.Loopback, 0);
+        l.Start();
+        int port = ((IPEndPoint)l.LocalEndpoint).Port;
+        l.Stop();
+        WebServiceUI.Log("... got port " + port + "\n");
+        return port;
     }
 
 
     private void startListener()
     {
 		keepRunning = true;
-		while (keepRunning)
+        while (keepRunning)
         {
             var result = listener.BeginGetContext(ListenerCallback, listener);
             result.AsyncWaitHandle.WaitOne();
@@ -38,14 +54,15 @@ public class MockDiscovery : Discovery
 
 	private void ListenerCallback(IAsyncResult result)
 	{
-		if (keepRunning)
+        WebServiceUI.Log("...got a connection\n");
+        if (keepRunning)
 		{
 			var context = listener.EndGetContext(result);
             string ip = null, port = null;
 
-            //Debug.Log(context.Request.RawUrl);
+            //WebServiceUI.Log(context.Request.RawUrl);
 
-			if (context.Request.QueryString.AllKeys.Length > 0)
+            if (context.Request.QueryString.AllKeys.Length > 0)
             {
 				foreach (var key in context.Request.QueryString.AllKeys)
 				{
