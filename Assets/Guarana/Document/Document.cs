@@ -4,7 +4,8 @@ using System.Collections.Generic;
 
 public class Document
 {
-    Dictionary<string, Media> medias;
+    private Dictionary<string, Media> medias;
+    private Scheduler scheduler;
 
 
     public Document()
@@ -15,7 +16,35 @@ public class Document
 
     public void AddMedia(Media m)
     {
+        m.SetDocument(this);
         medias.Add(m.GetId(), m);
+    }
+
+
+    public void SetScheduler(Scheduler scheduler)
+    {
+        this.scheduler = scheduler;
+    }
+
+
+    public void EvalTick(float time)
+    {
+        foreach (KeyValuePair<string, Media> kvp in medias)
+        {
+            kvp.Value.EvalTick(time);
+        }
+    }
+
+
+    public void EvalAction(string nodeid, EventType eventType, EventTransition eventTransition)
+    {
+        medias[nodeid].EvalAction(eventType, eventTransition);
+    }
+
+
+    public void EvalEventTransition(string nodeid, EventType evt, EventTransition trans)
+    {
+        scheduler.AddEventTransition(nodeid, evt, trans);
     }
 
 

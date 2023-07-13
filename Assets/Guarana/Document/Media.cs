@@ -7,7 +7,7 @@ public enum ScenePin { ENVIRONMENT, CAMERA };
 
 public class Media
 {
-
+    private Document doc;
     private string id, src, soundType;
     private float volume, dur, polar, azimuthal, radius, width, height;
     private int zIndex;
@@ -32,6 +32,8 @@ public class Media
 
     public string GetId() { return id; }
 
+    public void SetDocument(Document doc) { this.doc = doc; }
+
     public void SetSrc(string src) { this.src = src; }
 
     public void SetSoundType(string soundType) { this.soundType = soundType; }
@@ -55,6 +57,24 @@ public class Media
     public void SetPin(ScenePin pin) { this.pin = pin; }
 
     public void SetInSky() { inSky = true; }
+
+
+    public void EvalTick(float time)
+    {
+        //TODO: check duration
+    }
+
+
+    public void EvalAction(EventType evt, EventTransition trans)
+    {
+        Debug.Log(id + " - " + evt + " - " + trans);
+    }
+
+
+    public void EvalEventTransition(EventType evt, EventTransition trans)
+    {
+        doc.EvalEventTransition(id, evt, trans);
+    }
 
 
     public override string ToString()

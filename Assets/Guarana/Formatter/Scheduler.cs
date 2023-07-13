@@ -1,0 +1,120 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Scheduler : MonoBehaviour
+{
+    private class Action
+    {
+        public string nodeid;
+        public EventType evt;
+        public EventTransition trans;
+        public float delay;
+    }
+
+    private class Transition
+    {
+        public string nodeid;
+        public EventType evt;
+        public EventTransition trans;
+    }
+
+    private Document doc;
+    private List<Action> actions;
+    private List<Action> delayedActions;
+    private List<Transition> eventTransitions;
+
+
+    void Start()
+    {
+        actions = new List<Action>();
+        delayedActions = new List<Action>();
+        eventTransitions = new List<Transition>();
+    }
+
+    
+    void Update()
+    {
+        if (doc == null) return;
+
+        doc.EvalTick(Time.deltaTime);
+
+        if (delayedActions.Count > 0)
+        {
+            List<Action> temp = new List<Action>();
+            foreach (Action act in delayedActions)
+            {
+                act.delay -= Time.deltaTime;
+                if (act.delay <= 0)
+                {
+                    actions.Add(act);
+                }
+                else
+                {
+                    actions.Add(act);
+                }
+            }
+            delayedActions = temp;
+        }
+
+        if (actions.Count > 0)
+        {
+            foreach (Action act in actions)
+            {
+                doc.EvalAction(act.nodeid, act.evt, act.trans);
+            }
+            actions.Clear();
+        }
+
+        if (eventTransitions.Count > 0)
+        {
+            foreach (Transition t in eventTransitions)
+            {
+                //TODO: enviar para Ginga
+                Debug.Log(t.nodeid + " " + t.evt + " " + t.trans);
+            }
+            eventTransitions.Clear();
+        }
+    }
+
+
+    public void SetDocument(Document doc)
+    {
+        this.doc = doc;
+        doc.SetScheduler(this);
+    }
+
+
+    public void AddAction(string nodeid, EventType evt, EventTransition trans)
+    {
+        Action a = new Action();
+        a.nodeid = nodeid;
+        a.evt = evt;
+        a.trans = trans;
+
+        actions.Add(a);
+    }
+
+
+    public void AddDelayedAction(string nodeid, EventType evt, EventTransition trans, float delay)
+    {
+        Action a = new Action();
+        a.nodeid = nodeid;
+        a.evt = evt;
+        a.trans = trans;
+        a.delay = delay;
+
+        delayedActions.Add(a);
+    }
+
+
+    public void AddEventTransition(string nodeid, EventType evt, EventTransition trans)
+    {
+        Transition t = new Transition();
+        t.nodeid = nodeid;
+        t.evt = evt;
+        t.trans = trans;
+
+        eventTransitions.Add(t);
+    }
+}
