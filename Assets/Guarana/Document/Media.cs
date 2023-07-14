@@ -4,6 +4,7 @@ using UnityEngine;
 
 
 public enum ScenePin { ENVIRONMENT, CAMERA };
+public enum ProjectionType { EQUIRECTANGULAR, EQUIANGULARCUBEMAP };
 
 public class Media
 {
@@ -12,6 +13,7 @@ public class Media
     private float volume, dur, polar, azimuthal, radius, width, height;
     private int zIndex;
     private ScenePin pin;
+    private ProjectionType proj;
     private bool inSky;
 
     private GuaranaManager manager;
@@ -32,6 +34,7 @@ public class Media
         height = 0;
         zIndex = 0;
         pin = ScenePin.ENVIRONMENT;
+        proj = ProjectionType.EQUIRECTANGULAR;
         inSky = false;
         dur = float.PositiveInfinity;
 
@@ -71,6 +74,8 @@ public class Media
     public void SetZIndex(int zIndex) { this.zIndex = zIndex; }
 
     public void SetPin(ScenePin pin) { this.pin = pin; }
+
+    public void SetProjection(ProjectionType proj) { this.proj = proj; }
 
     public void SetInSky() { inSky = true; }
 
@@ -182,7 +187,7 @@ public class Media
 
         if (inSky)
         {
-            //TODO: create 360 player
+            player = manager.GenerateSkyPlayer(mime);
         }
         else
         {
@@ -204,6 +209,10 @@ public class Media
                 imp.SetPosition(azimuthal, polar, radius);
                 imp.SetSize(width, height);
             }
+        }
+        else
+        {
+            ((Video360Player) imp).ConfigureProjection(proj);
         }
 
         if (mime == BaseMimeType.audio || mime == BaseMimeType.video)

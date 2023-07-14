@@ -104,7 +104,14 @@ public class XMLParser
             media.SetVolume(float.Parse(aux, NumberStyles.Any, ci));
         }
         catch { }
-        
+
+        try
+        {
+            string aux = node.Attributes["project"].InnerText;
+            media.SetProjection((ProjectionType)Enum.Parse(typeof(ProjectionType), aux, true));
+        }
+        catch { }
+
         try
         {
             string aux = node.Attributes["dur"].InnerText;
