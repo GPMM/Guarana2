@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 
 public class Document
@@ -24,6 +25,15 @@ public class Document
     public void SetScheduler(Scheduler scheduler)
     {
         this.scheduler = scheduler;
+    }
+
+
+    public void SetManager(GuaranaManager manager)
+    {
+        foreach (KeyValuePair<string, Media> kvp in medias)
+        {
+            kvp.Value.SetManager(manager);
+        }
     }
 
 
