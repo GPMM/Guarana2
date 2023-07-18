@@ -11,7 +11,8 @@ public class Register
 
 	public Register(string loc)
     {
-        baseLocation = loc + "/remote-device";
+		WebServiceUI.Log("Register ");
+        baseLocation = loc + GingaURLTemplates.RegisterSuffix();
         msgType = "application/json";
 		msgBody = JsonUtility.ToJson(new RegisterMessage());
 
@@ -21,8 +22,10 @@ public class Register
 
 	public IEnumerator SendMessage()
 	{
+		WebServiceUI.Log(". ");
 		using (UnityWebRequest wr = UnityWebRequest.Post(baseLocation, msgBody, msgType))
 		{
+			WebServiceUI.Log(". ");
 			yield return wr.SendWebRequest();
 			if (wr.result != UnityWebRequest.Result.Success)
 			{
@@ -30,10 +33,10 @@ public class Register
 			}
 			else
 			{
-				WebServiceUI.Log("Register upload complete!\n");
+				WebServiceUI.Log(". ");
 				var text = wr.downloadHandler.text;
-				WebServiceUI.Log(text + "\n");
 				response = JsonUtility.FromJson<RegisterResponse>(text);
+				WebServiceUI.Log("got handle " + response.handle + " and url " + response.url + "\n");
 				running = false;
 			}
 		}

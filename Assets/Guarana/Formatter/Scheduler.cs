@@ -23,6 +23,7 @@ public class Scheduler : MonoBehaviour
     private List<Action> actions;
     private List<Action> delayedActions;
     private List<Transition> eventTransitions;
+    private GuaranaManager manager;
 
 
     void Start()
@@ -30,6 +31,7 @@ public class Scheduler : MonoBehaviour
         actions = new List<Action>();
         delayedActions = new List<Action>();
         eventTransitions = new List<Transition>();
+        manager = transform.parent.gameObject.GetComponent<GuaranaManager>();
     }
 
     
@@ -70,8 +72,7 @@ public class Scheduler : MonoBehaviour
         {
             foreach (Transition t in eventTransitions)
             {
-                //TODO: enviar para Ginga
-                Debug.Log(t.nodeid + " " + t.evt + " " + t.trans);
+                manager.NotifyEventTransition(t.nodeid, t.evt, t.trans);
             }
             eventTransitions.Clear();
         }

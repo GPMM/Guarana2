@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 public abstract class Discovery
 {
@@ -17,6 +14,6 @@ public abstract class Discovery
 
 	public string GetLocation()
     {
-		return "http://" + location.ip + ":" + location.port;
+		return GingaURLTemplates.BaseLocation(location.ip, location.port);
 	}
 }

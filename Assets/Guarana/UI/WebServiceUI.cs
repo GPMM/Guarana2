@@ -4,7 +4,10 @@ using TMPro;
 public class WebServiceUI : MonoBehaviour
 {
     [SerializeField]
-    private TextMeshProUGUI console;
+    private Material emptySkyBox;
+    [SerializeField]
+    private TextMeshPro debugConsole;
+
     private static string consoleText = "";
 
     private WebService ws;
@@ -13,12 +16,13 @@ public class WebServiceUI : MonoBehaviour
     void Start()
     {
         ws = GetComponent<WebService>();
+        RenderSettings.skybox = emptySkyBox;
     }
 
     
     void Update()
     {
-        console.text = consoleText;
+        debugConsole.text = consoleText;
     }
 
 

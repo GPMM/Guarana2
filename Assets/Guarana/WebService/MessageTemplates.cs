@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 public class RegisterMessage
 {
@@ -28,24 +26,51 @@ public class RegisterResponse
     public string url;
 }
 
-//public class MessageTemplates : MonoBehaviour
-//{
-//    // Start is called before the first frame update
-//    void Start()
-//    {
 
-//    }
+[System.Serializable]
+public class UserInfo
+{
+    public string id;
+    public string name;
+    public string icon;
+}
 
-//    // Update is called once per frame
-//    void Update()
-//    {
-
-//    }
-//}
+public class UserListResponse
+{
+    public List<UserInfo> users;
+}
 
 
-//msgBody = "{" +
-//        "\"deviceClass\": \"Guarana\"," +
-//        "\"supportedFormats\": [\"application/x-ncl360\"]," +
-//        "\"recognizableEvents\": [\"selection\",\"look\"]" +
-//        "}";
+public abstract class APIMessage { }
+
+
+public class NotifyUser : APIMessage
+{
+    public string user;
+}
+
+
+public class ReceiveScene : APIMessage
+{
+    public string nodeSrc;
+    public string appId;
+    public List<string> notifyEvents;
+}
+
+
+public class ReceiveAction : APIMessage
+{
+    public string node;
+    public string eventType;
+    public string action;
+    public int delay;
+}
+
+
+public class NotifyTransition : APIMessage
+{
+    public string node;
+    public string eventType;
+    public string transition;
+    //public int value;
+}

@@ -2,21 +2,20 @@ using UnityEngine;
 
 public class WebService : MonoBehaviour
 {
-    [SerializeField]
     private string GingaCCWSLocation;
-    [SerializeField]
     private string WebSocketHandle;
-    [SerializeField]
     private string WebSocketURL;
 
     private Discovery discovery;
     private Register register;
     private WebSocketClient webSocketClient;
+    private GuaranaManager manager;
 
 
     void Start()
     {
-        WebServiceUI.Log("Starting Web Service...\n");
+        manager = transform.parent.gameObject.GetComponent<GuaranaManager>();
+        transform.Find("DebugConsole").gameObject.SetActive(manager.DebugMode());
 
         discovery = new MockDiscovery();
     }
@@ -42,9 +41,8 @@ public class WebService : MonoBehaviour
             WebSocketHandle = register.GetHandle();
             WebSocketURL = register.GetURL();
             register = null;
-            WebServiceUI.Log("Ginga at " + WebSocketURL + " my handle: " + WebSocketHandle + "\n");
 
-            webSocketClient = new WebSocketClient(WebSocketURL);
+            webSocketClient = new WebSocketClient(WebSocketURL, WebSocketHandle, GingaCCWSLocation);
         }
 
 
@@ -52,6 +50,7 @@ public class WebService : MonoBehaviour
         if (webSocketClient != null && webSocketClient.Running())
         {
             WebServiceUI.Clear();
+            manager.HasConnected(webSocketClient, GingaCCWSLocation);
         }
     }
 }

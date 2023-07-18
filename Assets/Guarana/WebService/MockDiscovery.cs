@@ -14,29 +14,29 @@ public class MockDiscovery : Discovery
 
     public MockDiscovery()
     {
-        WebServiceUI.Log("Creating http listener...\n");
+        WebServiceUI.Log("Mock discovery ");
         listener = new HttpListener();
         port = FreeTcpPort();
         listener.Prefixes.Add("http://+:" + port + "/");
         listener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
 
         listener.Start();
-        WebServiceUI.Log("... listener is on.\n");
+        WebServiceUI.Log(". ");
 
         listenerThread = new Thread(startListener);
         listenerThread.Start();
-        WebServiceUI.Log("Thread is running...");
+        WebServiceUI.Log(". ");
     }
 
 
     static int FreeTcpPort()
     {
-        WebServiceUI.Log("gathering free TCP port... ");
+        WebServiceUI.Log(". ");
         TcpListener l = new TcpListener(IPAddress.Loopback, 0);
         l.Start();
         int port = ((IPEndPoint)l.LocalEndpoint).Port;
         l.Stop();
-        WebServiceUI.Log("... got port " + port + "\n");
+        WebServiceUI.Log("on port " + port + "\n");
         return port;
     }
 
@@ -54,7 +54,7 @@ public class MockDiscovery : Discovery
 
 	private void ListenerCallback(IAsyncResult result)
 	{
-        WebServiceUI.Log("...got a connection\n");
+        WebServiceUI.Log("Got a connection\n");
         if (keepRunning)
 		{
 			var context = listener.EndGetContext(result);
