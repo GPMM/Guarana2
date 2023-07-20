@@ -54,6 +54,7 @@ public class ReceiveScene : APIMessage
 {
     public string nodeSrc;
     public string appId;
+    public string type;
     public List<string> notifyEvents;
 }
 

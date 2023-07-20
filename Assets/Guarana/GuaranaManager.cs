@@ -21,7 +21,7 @@ public class GuaranaManager : MonoBehaviour
 
     private GameObject webservice;
     private GameObject userSelector;
-    private GameObject downloadManager;
+    private DownloadManager downloadManager;
     private GameObject scheduler;
     private GameObject scene;
 
@@ -29,6 +29,7 @@ public class GuaranaManager : MonoBehaviour
     private string GingaCCWSLocation;
 
     private bool debugModeOn;
+    private ReceiveScene receivedScene;
     private List<EventType> notifyEvents;
     private List<ReceiveAction> storedActionMsg;
 
@@ -37,7 +38,7 @@ public class GuaranaManager : MonoBehaviour
     {
         webservice = transform.Find("WebService").gameObject;
         userSelector = transform.Find("UserSelector").gameObject;
-        downloadManager = transform.Find("Downloader").gameObject;
+        downloadManager = transform.Find("Downloader").gameObject.GetComponent<DownloadManager>();
         scheduler = transform.Find("Scheduler").gameObject;
         scene = transform.Find("Scene").gameObject;
 
@@ -58,16 +59,63 @@ public class GuaranaManager : MonoBehaviour
             // User identification is over, send to Ginga
             NotifyUser msg = new NotifyUser();
             msg.user = userSelector.GetComponent<UserSelector>().GetSelectedUser();
+            
             GingaCCWSClient.SendMessage(msg);
             userSelector.SetActive(false);
         }
 
-        if (!userSelector.activeInHierarchy && storedActionMsg.Count > 0)
+        if (receivedScene != null)
         {
-            foreach(ReceiveAction msg in storedActionMsg)
+            downloadManager.SetBaseLocation(GingaCCWSLocation, receivedScene.appId);
+            StartCoroutine(downloadManager.DownloadDocument(receivedScene.nodeSrc, this));
+            foreach (string e in receivedScene.notifyEvents)
             {
-                ReceiveAction(msg);
+                try
+                {
+                    notifyEvents.Add((EventType)Enum.Parse(typeof(EventType), e, true));
+                }
+                catch (Exception ex) { Debug.Log(ex); }
             }
+            receivedScene = null;
+        }
+
+        if (storedActionMsg.Count > 0)
+        {
+            // Forward messages to scheduler
+            List<ReceiveAction> temp = new List<ReceiveAction>();
+
+            foreach (ReceiveAction msg in storedActionMsg)
+            {
+                EventType type = (EventType)Enum.Parse(typeof(EventType), msg.eventType, true);
+
+                // If user identification is ongoing, only preparation messages can go through
+                if (userSelector.activeInHierarchy && type != EventType.PREPARATION)
+                {
+                    temp.Add(msg);
+                    continue;
+                }
+
+                EventTransition action = (EventTransition)Enum.Parse(typeof(EventTransition), msg.action, true);
+
+                // Check if is an action over the document as a whole
+                if (msg.node == "DOC" && action == EventTransition.STOP)
+                {
+                    RemoveDocument();
+                    continue;
+                }
+
+                
+                if (msg.delay > 0)
+                {
+                    scheduler.GetComponent<Scheduler>().AddDelayedAction(msg.node, type, action, msg.delay);
+                }
+                else
+                {
+                    scheduler.GetComponent<Scheduler>().AddAction(msg.node, type, action);
+                }
+
+            }
+            storedActionMsg = temp;
         }
     }
 
@@ -82,7 +130,7 @@ public class GuaranaManager : MonoBehaviour
     {
         this.GingaCCWSClient = GingaCCWSClient;
         this.GingaCCWSLocation = GingaCCWSLocation;
-
+        
         // Ask for user identification
         userSelector.GetComponent<UserSelector>().SetBaseLocation(GingaCCWSLocation);
         
@@ -93,20 +141,13 @@ public class GuaranaManager : MonoBehaviour
 
     public void ReceivedDocument(ReceiveScene msg)
     {
-        // No problem to receive document if user identification is ongoing
-        downloadManager.GetComponent<DownloadManager>().SetBaseLocation(GingaCCWSLocation, msg.appId);
-
-        StartCoroutine(downloadManager.GetComponent<DownloadManager>().DownloadDocument(msg.nodeSrc, this));
-
-        foreach (string e in msg.notifyEvents)
-        {
-            notifyEvents.Add((EventType) Enum.Parse(typeof(EventType), e, true));
-        }
+        receivedScene = msg;
     }
 
 
     public void SetDocument(string xmldoc)
     {
+        Debug.Log("Received document");
         // No problem to parse and start scheduler if user identification is ongoing
         XMLParser parser = new XMLParser();
         Document doc = parser.Parse(xmldoc);
@@ -117,27 +158,16 @@ public class GuaranaManager : MonoBehaviour
     }
 
 
+    public void RemoveDocument()
+    {
+        scheduler.SetActive(false);
+        Debug.Log("Received document termination");
+    }
+
+
     public void ReceiveAction(ReceiveAction msg)
     {
-        EventType type = (EventType)Enum.Parse(typeof(EventType), msg.eventType, true);
-
-        // If user identification is ongoing, only preparation messages can go through
-        if (userSelector.activeInHierarchy && type != EventType.PREPARATION)
-        {
-            storedActionMsg.Add(msg);
-            return;
-        }
-
-        EventTransition action = (EventTransition)Enum.Parse(typeof(EventTransition), msg.action, true);
-
-        if (msg.delay > 0)
-        {
-            scheduler.GetComponent<Scheduler>().AddDelayedAction(msg.node, type, action, msg.delay);
-        }
-        else
-        {
-            scheduler.GetComponent<Scheduler>().AddAction(msg.node, type, action);
-        }
+        storedActionMsg.Add(msg);
     }
 
 
@@ -150,7 +180,7 @@ public class GuaranaManager : MonoBehaviour
         msg.node = nodeid;
         msg.eventType = Enum.GetName(typeof(EventType), evt).ToLower();
         msg.transition = Enum.GetName(typeof(EventTransition), trans).ToLower() + "s";
-
+        
         GingaCCWSClient.SendMessage(msg);
     }
 

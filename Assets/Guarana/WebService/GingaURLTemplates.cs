@@ -35,8 +35,8 @@ public class GingaURLTemplates
     }
 
 
-    public static string StreamSuffix(string stream)
+    public static string StreamSuffix(string appid, string stream)
     {
-        return "/dtv/current-service/stream/" + stream;
+        return "/dtv/current-service/stream/" + appid + "?path=" + stream;
     }
 }

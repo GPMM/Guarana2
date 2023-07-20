@@ -80,6 +80,12 @@ public class Media
     public void SetInSky() { inSky = true; }
 
 
+    public bool Running()
+    {
+        return presentation.State() == EventState.OCCURRING || preparation.State() == EventState.OCCURRING;
+    }
+
+
     public void EvalTick(float time)
     {
         if (presentation.State() != EventState.OCCURRING)

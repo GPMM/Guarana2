@@ -6,12 +6,10 @@ using UnityEngine.Networking;
 
 public class DownloadManager : MonoBehaviour
 {
+    [SerializeField]
     private string baseLocation;
+    [SerializeField]
     private string appId;
-
-    //teststuff
-    public Texture2D imageFile;
-    public AudioClip audioFile;
 
     
     public void SetBaseLocation(string baseLocation, string appId)
@@ -31,7 +29,7 @@ public class DownloadManager : MonoBehaviour
         if (src.StartsWith("sbtvd-ts://"))
         {
             src = src.Replace("sbtvd-ts://", "");
-            return GingaURLTemplates.StreamSuffix(src);
+            return baseLocation + GingaURLTemplates.StreamSuffix(appId, src);
         }
 
         if (src.StartsWith("/"))
@@ -43,23 +41,39 @@ public class DownloadManager : MonoBehaviour
             src.Substring(2);
         }
 
-        return GingaURLTemplates.AppFilesSuffix(appId, src);
+        return baseLocation + GingaURLTemplates.AppFilesSuffix(appId, src);
     }
 
 
     public string SetupVideoURL(string src)
     {
-        if (src.StartsWith("rtp://") || src.StartsWith("rtsp://"))
+        if (src.StartsWith("rtp://") || src.StartsWith("rtsp://") || src.StartsWith("http://") || src.StartsWith("https://"))
         {
             return src;
         }
 
-        return SetupURL(src);
+        if (src.StartsWith("sbtvd-ts://"))
+        {
+            src = src.Replace("sbtvd-ts://", "");
+            return baseLocation + GingaURLTemplates.StreamSuffix(appId, src);
+        }
+
+        if (src.StartsWith("/"))
+        {
+            src.Substring(1);
+        }
+        else if (src.StartsWith("./"))
+        {
+            src.Substring(2);
+        }
+
+        return baseLocation + GingaURLTemplates.StreamSuffix(appId, src);
     }
 
 
     public IEnumerator DownloadDocument(string src, GuaranaManager manager)
     {
+        Debug.Log(SetupURL(src));
         using (UnityWebRequest wr = UnityWebRequest.Get(SetupURL(src)))
         {
             yield return wr.SendWebRequest();
@@ -78,7 +92,8 @@ public class DownloadManager : MonoBehaviour
 
     public IEnumerator DownloadImage(string src, Player player)
     {
-        using (UnityWebRequest wr = UnityWebRequest.Get(SetupURL(src)))
+        Debug.Log(SetupURL(src));
+        using (UnityWebRequest wr = UnityWebRequestTexture.GetTexture(SetupURL(src)))
         {
             yield return wr.SendWebRequest();
             if (wr.result != UnityWebRequest.Result.Success)
@@ -96,7 +111,8 @@ public class DownloadManager : MonoBehaviour
 
     public IEnumerator DownloadAudio(string src, Player player)
     {
-        using (UnityWebRequest wr = UnityWebRequest.Get(SetupURL(src)))
+        Debug.Log(SetupURL(src));
+        using (UnityWebRequest wr = UnityWebRequestMultimedia.GetAudioClip(SetupURL(src), MimeTypes.GetAudioType(src)))
         {
             yield return wr.SendWebRequest();
             if (wr.result != UnityWebRequest.Result.Success)
@@ -114,6 +130,7 @@ public class DownloadManager : MonoBehaviour
 
     public IEnumerator DownloadText(string src, Player player)
     {
+        Debug.Log(SetupURL(src));
         using (UnityWebRequest wr = UnityWebRequest.Get(SetupURL(src)))
         {
             yield return wr.SendWebRequest();

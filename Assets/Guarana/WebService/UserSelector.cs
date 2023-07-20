@@ -13,18 +13,20 @@ public class UserSelector : MonoBehaviour
 
 	void Start()
     {
-		running = true;
+		SetUser("ana");
 
-		if (HasUsers())
-        {
-			StartCoroutine(SendMessage());
-		}
-	}
+        //running = true;
+
+        //if (HasUsers())
+        //{
+        //    StartCoroutine(SendMessage());
+        //}
+    }
 
 
     public void SetBaseLocation(string baseLocation)
     {
-        this.baseLocation = baseLocation + GingaURLTemplates.RegisterSuffix();
+        this.baseLocation = baseLocation + GingaURLTemplates.UserListSuffix();
 	}
 
 

@@ -42,7 +42,7 @@ public class WebService : MonoBehaviour
             WebSocketURL = register.GetURL();
             register = null;
 
-            webSocketClient = new WebSocketClient(WebSocketURL, WebSocketHandle, GingaCCWSLocation);
+            webSocketClient = new WebSocketClient(WebSocketURL, WebSocketHandle, GingaCCWSLocation, manager);
         }
 
 

@@ -37,6 +37,17 @@ public class Document
     }
 
 
+    public bool Running()
+    {
+        bool running = false;
+        foreach (KeyValuePair<string, Media> kvp in medias)
+        {
+            running |= kvp.Value.Running();
+        }
+        return running;
+    }
+
+
     public void EvalTick(float time)
     {
         foreach (KeyValuePair<string, Media> kvp in medias)
@@ -48,7 +59,10 @@ public class Document
 
     public void EvalAction(string nodeid, EventType eventType, EventTransition eventTransition)
     {
-        medias[nodeid].EvalAction(eventType, eventTransition);
+        if (medias.ContainsKey(nodeid))
+        {
+            medias[nodeid].EvalAction(eventType, eventTransition);
+        }
     }
 
 

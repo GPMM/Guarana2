@@ -9,12 +9,14 @@ public class WebSocketClient
     private string baseURL;
     private WebSocket ws;
     private bool isRunning;
+    private GuaranaManager manager;
 
 
-    public WebSocketClient(string url, string handle, string baseURL)
+    public WebSocketClient(string url, string handle, string baseURL, GuaranaManager manager)
     {
         this.handle = handle;
         this.baseURL = baseURL;
+        this.manager = manager;
         isRunning = false;
 
         WebServiceUI.Log("Socket . ");
@@ -42,13 +44,20 @@ public class WebSocketClient
 
     private void ReceiveMessage(string data)
     {
+        //Debug.Log(data);
         if (data.Contains("appId"))
         {
             ReceiveScene response = JsonUtility.FromJson<ReceiveScene>(data);
+            manager.ReceivedDocument(response);
         }
         else if (data.Contains("eventType"))
         {
             ReceiveAction response = JsonUtility.FromJson<ReceiveAction>(data);
+            manager.ReceiveAction(response);
+        }
+        else
+        {
+            Debug.Log("Message not recognized");
         }
     }
 

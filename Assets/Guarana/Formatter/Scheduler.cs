@@ -53,7 +53,7 @@ public class Scheduler : MonoBehaviour
                 }
                 else
                 {
-                    actions.Add(act);
+                    temp.Add(act);
                 }
             }
             delayedActions = temp;
@@ -72,6 +72,7 @@ public class Scheduler : MonoBehaviour
         {
             foreach (Transition t in eventTransitions)
             {
+                Debug.Log("Scheduler Trans: " + t.nodeid + " " + t.evt + " " + t.trans);
                 manager.NotifyEventTransition(t.nodeid, t.evt, t.trans);
             }
             eventTransitions.Clear();
@@ -88,6 +89,7 @@ public class Scheduler : MonoBehaviour
 
     public void AddAction(string nodeid, EventType evt, EventTransition trans)
     {
+        Debug.Log("Scheduler Action: " + nodeid + ", " + evt + ", " + trans);
         Action a = new Action();
         a.nodeid = nodeid;
         a.evt = evt;
@@ -99,6 +101,7 @@ public class Scheduler : MonoBehaviour
 
     public void AddDelayedAction(string nodeid, EventType evt, EventTransition trans, float delay)
     {
+        Debug.Log("Scheduler DAction: " + nodeid + ", " + evt + ", " + trans + ", " + delay);
         Action a = new Action();
         a.nodeid = nodeid;
         a.evt = evt;

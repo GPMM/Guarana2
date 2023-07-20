@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 
 public enum BaseMimeType { audio, image, model, text, video, application };
@@ -59,5 +60,14 @@ public class MimeTypes
             return "application/octet-stream";
 
         return Mimes[ext];
+    }
+
+
+    public static AudioType GetAudioType(string src)
+    {
+        string ext = Path.GetExtension(src);
+        if (ext == ".mp3") return AudioType.MPEG;
+        else if (ext == ".ogg") return AudioType.OGGVORBIS;
+        else return AudioType.UNKNOWN;
     }
 }
