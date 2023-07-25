@@ -161,6 +161,14 @@ public class GuaranaManager : MonoBehaviour
     public void RemoveDocument()
     {
         scheduler.SetActive(false);
+        for (int i = scene.transform.childCount - 1; i >= 0; i--)
+        {
+            Destroy(scene.transform.GetChild(i).gameObject);
+        }
+        for (int i = xrcamera.transform.childCount - 1; i >= 0; i--)
+        {
+            Destroy(xrcamera.transform.GetChild(i).gameObject);
+        }
         Debug.Log("Received document termination");
     }
 
