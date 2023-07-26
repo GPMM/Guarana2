@@ -60,14 +60,15 @@ public class DownloadManager : MonoBehaviour
 
         if (src.StartsWith("/"))
         {
-            src.Substring(1);
+            src = src.Substring(1);
         }
         else if (src.StartsWith("./"))
         {
-            src.Substring(2);
+            src = src.Substring(2);
         }
 
-        return baseLocation + GingaURLTemplates.StreamSuffix(appId, src);
+        //return baseLocation + GingaURLTemplates.StreamSuffix(appId, src);
+        return Application.streamingAssetsPath + "/" + appId + "/" + src;
     }
 
 
