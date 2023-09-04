@@ -120,6 +120,36 @@ public class GuaranaManager : MonoBehaviour
     }
 
 
+    void OnApplicationPause(bool pauseStatus)
+    {
+        EventTransition t;
+        if (pauseStatus)
+        {
+            t = EventTransition.PAUSE;
+        }
+        else
+        {
+            t = EventTransition.RESUME;
+        }
+        NotifyEventTransition("", EventType.PRESENTATION, t);
+    }
+
+
+    void OnApplicationFocus(bool hasFocus)
+    {
+        EventTransition t;
+        if (!hasFocus)
+        {
+            t = EventTransition.PAUSE;
+        }
+        else
+        {
+            t = EventTransition.RESUME;
+        }
+        NotifyEventTransition("", EventType.FOCUS, t);
+    }
+
+
     public bool DebugMode()
     {
         return debugModeOn;

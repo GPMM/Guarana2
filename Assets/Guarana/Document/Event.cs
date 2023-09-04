@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 
-public enum EventType { PRESENTATION, PREPARATION, VIEW, SELECTION };
+public enum EventType { PRESENTATION, PREPARATION, VIEW, SELECTION, FOCUS };
 public enum EventState { OCCURRING, SLEEPING, PAUSED };
 public enum EventTransition { START, STOP, ABORT, PAUSE, RESUME };
 
