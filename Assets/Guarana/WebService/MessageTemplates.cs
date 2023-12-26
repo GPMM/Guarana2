@@ -15,7 +15,7 @@ public class RegisterMessage
 
         recognizableEvents = new List<string>();
         recognizableEvents.Add("selection");
-        recognizableEvents.Add("look");
+        recognizableEvents.Add("view");
     }
 }
 

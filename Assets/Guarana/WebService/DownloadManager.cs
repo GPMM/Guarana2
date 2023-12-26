@@ -67,8 +67,7 @@ public class DownloadManager : MonoBehaviour
             src = src.Substring(2);
         }
 
-        //return baseLocation + GingaURLTemplates.StreamSuffix(appId, src);
-        return Application.streamingAssetsPath + "/" + appId + "/" + src;
+        return baseLocation + GingaURLTemplates.AppFilesSuffix(appId, src);
     }
 
 
