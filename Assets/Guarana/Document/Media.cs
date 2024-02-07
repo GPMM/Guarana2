@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 
 public enum ScenePin { ENVIRONMENT, CAMERA };
 public enum ProjectionType { EQUIRECTANGULAR, EQUIANGULARCUBEMAP };
@@ -15,10 +13,11 @@ public class Media
     private ScenePin pin;
     private ProjectionType proj;
     private bool inSky;
-
-    private GuaranaManager manager;
+    
+    private Formatter formatter;
     private GameObject player;
     private Event presentation, preparation, view;
+    private List<Area> areas;
     private float _dur;
     private bool _prepared, _autostart;
 
@@ -42,6 +41,8 @@ public class Media
         preparation = new Event(EventType.PREPARATION);
         view = new Event(EventType.VIEW);
 
+        areas = new List<Area>();
+
         _prepared = false;
         _autostart = false;
     }
@@ -51,7 +52,7 @@ public class Media
 
     public void SetDocument(Document doc) { this.doc = doc; }
 
-    public void SetManager(GuaranaManager manager) { this.manager = manager; }
+    public void SetFormatter(Formatter formatter) { this.formatter = formatter; }
 
     public void SetSrc(string src) { this.src = src; }
 
@@ -80,9 +81,23 @@ public class Media
     public void SetInSky() { inSky = true; }
 
 
-    public bool Running()
+    public void AddArea(Area a)
+    {
+        a.SetMedia(this);
+        areas.Add(a);
+    }
+
+
+    public bool IsOccurring()
     {
         return presentation.State() == EventState.OCCURRING || preparation.State() == EventState.OCCURRING;
+    }
+
+
+    public bool IsPaused()
+    {
+        return (presentation.State() == EventState.PAUSED || preparation.State() == EventState.PAUSED) &&
+            (presentation.State() != EventState.OCCURRING && preparation.State() != EventState.OCCURRING);
     }
 
 
@@ -94,16 +109,36 @@ public class Media
         _dur -= time;
         if (_dur <= 0)
         {
-            EvalAction(EventType.PRESENTATION, EventTransition.STOP);
+            EvalAction(new Action(id, EventType.PRESENTATION, EventTransition.STOP));
+        }
+        else
+        {
+            foreach (Area a in areas)
+            {
+                a.EvalTick(time);
+            }
         }
     }
 
 
-    public void EvalAction(EventType evt, EventTransition trans)
+    public void EvalAction(Action a)
     {
+        EventType evt = a.evt;
+        EventTransition trans = a.trans;
+
         if (evt == EventType.PREPARATION && trans == EventTransition.START && preparation.Transition(trans))
         {
             StartPreparation();
+        }
+        else if (evt == EventType.PRESENTATION && trans == EventTransition.START && presentation.CheckTransition(trans) && !_prepared)
+        {
+            // Media not prepared...
+            _autostart = true;
+            if (preparation.State() == EventState.SLEEPING)
+            {
+                // ... prepare it first
+                StartPreparation();
+            }
         }
         else if ( evt == EventType.PRESENTATION && presentation.Transition(trans) )
         {
@@ -113,9 +148,10 @@ public class Media
                     StartPresentation();
                     break;
                 case EventTransition.STOP:
-                    StopPresentation();
+                    StopPresentation(true);
                     break;
                 case EventTransition.ABORT:
+                    AbortPresentation();
                     break;
                 case EventTransition.PAUSE:
                     PausePresentation();
@@ -130,10 +166,13 @@ public class Media
 
     public void TriggerTransition(EventType evt, EventTransition trans)
     {
+        bool _notify = false;
+        bool _callstart = false;
+
         if (evt == EventType.VIEW && view.Transition(trans))
         {
             // nothing else to do, just send to document
-            doc.EvalEventTransition(id, evt, trans);
+            _notify = true;
         }
         else if (evt == EventType.PREPARATION && preparation.Transition(trans))
         {
@@ -145,24 +184,40 @@ public class Media
                 {
                     // start media after waiting for preparation
                     _autostart = false;
-                    StartPresentation();
+                    _callstart = true;
                 }
             }
 
             // nothing else to do, just send to document
-            doc.EvalEventTransition(id, evt, trans);
+            _notify = true;
         }
         else if (evt == EventType.PRESENTATION && presentation.Transition(trans))
         {
             // check if natural end occurred
             if (trans == EventTransition.STOP)
             {
-                StopPresentation();
+                StopPresentation(false);
             }
 
             // nothing else to do, just send to document
-            doc.EvalEventTransition(id, evt, trans);
+            _notify = true;
         }
+
+        if (_notify)
+        {
+            doc.EvalEventTransition(new Transition(id, evt, trans));
+        }
+
+        if (_callstart)
+        {
+            EvalAction(new Action(id, EventType.PRESENTATION, EventTransition.START));
+        }
+    }
+
+
+    public void TriggerAreaTransition(string ifaceid, EventType evt, EventTransition trans)
+    {
+        doc.EvalEventTransition(new Transition(id, ifaceid, evt, trans));
     }
 
 
@@ -182,6 +237,8 @@ public class Media
         ret += " height:" + height;
         ret += " zIndex:" + zIndex;
         ret += " pin:" + pin;
+        foreach (Area a in areas)
+            ret += "\n" + a.ToString();
         return ret;
     }
 
@@ -193,38 +250,38 @@ public class Media
 
         if (inSky)
         {
-            player = manager.GenerateSkyPlayer(mime);
+            player = formatter.GenerateSkyPlayer(mime);
         }
         else
         {
-            player = manager.GeneratePlayer(mime, pin);
+            player = formatter.GeneratePlayer(mime, pin);
         }
         
         Player imp = player.GetComponent<Player>();
         imp.SetMedia(this);
 
-        if (!inSky)
-        {
-            if (mime == BaseMimeType.text)
-            {
-                ((TextPlayer) imp).SetPosition(azimuthal, polar, radius);
-                ((TextPlayer) imp).SetSize(width, height);
-            }
-            else
-            {
-                imp.SetPosition(azimuthal, polar, radius);
-                imp.SetSize(width, height);
-            }
-        }
-        else
-        {
-            ((Video360Player) imp).ConfigureProjection(proj);
-        }
+        //if (!inSky)
+        //{
+        //    if (mime == BaseMimeType.text)
+        //    {
+        //        ((TextPlayer) imp).SetPosition(azimuthal, polar, radius);
+        //        ((TextPlayer) imp).SetSize(width, height);
+        //    }
+        //    else
+        //    {
+        //        imp.SetPosition(azimuthal, polar, radius);
+        //        imp.SetSize(width, height);
+        //    }
+        //}
+        //else
+        //{
+        //    ((Video360Player) imp).ConfigureProjection(proj);
+        //}
 
-        if (mime == BaseMimeType.audio || mime == BaseMimeType.video)
-        {
-            imp.ConfigureSound(soundType, volume);
-        }
+        //if (mime == BaseMimeType.audio || mime == BaseMimeType.video)
+        //{
+        //    imp.ConfigureSound(soundType, volume);
+        //}
 
         imp.LoadContent(src);
     }
@@ -232,42 +289,62 @@ public class Media
 
     private void StartPresentation()
     {
-        if (!_prepared)
+        _dur = dur;
+        player.GetComponent<Player>().StartPresentation();
+        doc.EvalEventTransition(new Transition(id, EventType.PRESENTATION, EventTransition.START));
+
+        foreach (Area a in areas)
         {
-            // Media not prepared...
-            if (preparation.State() == EventState.OCCURRING)
-            {
-                // ... wait for it end
-                _autostart = true;
-            }
-            else
-            {
-                // ... otherwise prepare it first
-                StartPreparation();
-            }
-        }
-        else
-        {
-            _dur = dur;
-            player.GetComponent<Player>().StartPresentation();
+            a.StartPresentation();
         }
     }
 
 
-    private void StopPresentation()
+    private void StopPresentation(bool notify)
     {
         player.GetComponent<Player>().StopPresentation();
+        if (notify)
+            doc.EvalEventTransition(new Transition(id, EventType.PRESENTATION, EventTransition.STOP));
+
+        foreach (Area a in areas)
+        {
+            a.StopPresentation();
+        }
+    }
+
+
+    public void AbortPresentation()
+    {
+        player.GetComponent<Player>().AbortPresentation();
+        doc.EvalEventTransition(new Transition(id, EventType.PRESENTATION, EventTransition.ABORT));
+
+        foreach (Area a in areas)
+        {
+            a.AbortPresentation();
+        }
     }
 
 
     private void PausePresentation()
     {
         player.GetComponent<Player>().PausePresentation();
+        doc.EvalEventTransition(new Transition(id, EventType.PRESENTATION, EventTransition.PAUSE));
+
+        foreach (Area a in areas)
+        {
+            a.PausePresentation();
+        }
     }
 
 
     private void ResumePresentation()
     {
         player.GetComponent<Player>().ResumePresentation();
+        doc.EvalEventTransition(new Transition(id, EventType.PRESENTATION, EventTransition.RESUME));
+
+        foreach (Area a in areas)
+        {
+            a.ResumePresentation();
+        }
     }
 }

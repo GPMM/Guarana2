@@ -69,6 +69,8 @@ public abstract class Player : MonoBehaviour
 
     public abstract void StopPresentation();
 
+    public abstract void AbortPresentation();
+
     public abstract void PausePresentation();
 
     public abstract void ResumePresentation();

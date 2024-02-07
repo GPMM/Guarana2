@@ -10,12 +10,31 @@ public class XMLParser
     private XmlDocument xmlDoc;
     //private string ncldtd;
     private Dictionary<string, XmlNode> regions, descriptors;
+    private Dictionary<string, (EventType, EventTransition)> conditions, actions;
 
     public XMLParser()
     {
         xmlDoc = new XmlDocument();
         regions = new Dictionary<string, XmlNode>();
         descriptors = new Dictionary<string, XmlNode>();
+
+        conditions = new Dictionary<string, (EventType, EventTransition)>();
+        conditions.Add("onBegin", (EventType.PRESENTATION, EventTransition.START));
+        conditions.Add("onEnd", (EventType.PRESENTATION, EventTransition.STOP));
+        conditions.Add("onAbort", (EventType.PRESENTATION, EventTransition.ABORT));
+        conditions.Add("onPause", (EventType.PRESENTATION, EventTransition.PAUSE));
+        conditions.Add("onResume", (EventType.PRESENTATION, EventTransition.RESUME));
+        conditions.Add("onPrepare", (EventType.PREPARATION, EventTransition.STOP));
+        conditions.Add("onEnterView", (EventType.VIEW, EventTransition.START));
+        conditions.Add("onExitView", (EventType.VIEW, EventTransition.STOP));
+
+        actions = new Dictionary<string, (EventType, EventTransition)>();
+        actions.Add("start", (EventType.PRESENTATION, EventTransition.START));
+        actions.Add("stop", (EventType.PRESENTATION, EventTransition.STOP));
+        actions.Add("abort", (EventType.PRESENTATION, EventTransition.ABORT));
+        actions.Add("pause", (EventType.PRESENTATION, EventTransition.PAUSE));
+        actions.Add("resume", (EventType.PRESENTATION, EventTransition.RESUME));
+        actions.Add("prepare", (EventType.PREPARATION, EventTransition.START));
 
         //ncldtd = "< !DOCTYPE ncl360 [  \n" +
         //            "< !ELEMENT region EMPTY>\n" +
@@ -48,10 +67,10 @@ public class XMLParser
     }
 
 
-    public Document Parse(string xmldocfile)
+    public Document Parse(string xmldocfile, string docid)
     {
         xmlDoc.LoadXml(xmldocfile);
-        Document doc = new Document();
+        Document doc = new Document(docid);
 
         foreach (XmlNode node in xmlDoc.GetElementsByTagName("region"))
         {
@@ -69,6 +88,16 @@ public class XMLParser
             doc.AddMedia(media);
         }
 
+        foreach (XmlNode node in xmlDoc.GetElementsByTagName("port"))
+        {
+            ParsePort(node, doc);
+        }
+
+        foreach (XmlNode node in xmlDoc.GetElementsByTagName("link"))
+        {
+            ParseLink(node, doc);
+        }
+
         return doc;
     }
 
@@ -80,6 +109,31 @@ public class XMLParser
 
         string descriptor = node.Attributes["descriptor"].InnerText;
         ParseDescriptor(descriptor, media);
+
+        CultureInfo ci = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+        ci.NumberFormat.CurrencyDecimalSeparator = ".";
+        foreach (XmlNode area in node.ChildNodes)
+        {
+            Area a = new Area(area.Attributes["id"].InnerText);
+
+            try
+            {
+                string aux = area.Attributes["begin"].InnerText;
+                float num = float.Parse(Regex.Match(aux, @"([-+]?[0-9]*\.?[0-9]+)").Groups[1].Value, NumberStyles.Any, ci);
+                a.SetBegin(num);
+            }
+            catch { }
+
+            try
+            {
+                string aux = area.Attributes["end"].InnerText;
+                float num = float.Parse(Regex.Match(aux, @"([-+]?[0-9]*\.?[0-9]+)").Groups[1].Value, NumberStyles.Any, ci);
+                a.SetEnd(num);
+            }
+            catch { }
+
+            media.AddArea(a);
+        }
 
         return media;
     }
@@ -174,5 +228,78 @@ public class XMLParser
             media.SetPin((ScenePin)Enum.Parse(typeof(ScenePin), aux, true));
         }
         catch { }
+    }
+
+
+    private void ParsePort(XmlNode node, Document doc)
+    {
+        string nodeid = node.Attributes["media"].InnerText;
+        if (doc.HasMedia(nodeid))
+        {
+            doc.AddPort(new Action(nodeid, EventType.PRESENTATION, EventTransition.START));
+        }
+    }
+
+
+    private void ParseLink(XmlNode node, Document doc)
+    {
+        CultureInfo ci = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+        ci.NumberFormat.CurrencyDecimalSeparator = ".";
+
+        Transition cond = null;
+        List<Action> acts = new List<Action>();
+        bool hasCondition = false;
+
+        foreach (XmlNode bind in node.ChildNodes)
+        {
+            string nodeid, trigger, ifaceid;
+            float delay;
+
+            nodeid = bind.Attributes["media"].InnerText;
+            if (!doc.HasMedia(nodeid))
+                continue;
+
+            trigger = bind.Attributes["trigger"].InnerText;
+
+            try
+            {
+                ifaceid = bind.Attributes["interface"].InnerText;
+            }
+            catch
+            {
+                ifaceid = null;
+            }
+
+            try
+            {
+                string aux = bind.Attributes["delay"].InnerText;
+                delay = float.Parse(Regex.Match(aux, @"([-+]?[0-9]*\.?[0-9]+)").Groups[1].Value, NumberStyles.Any, ci);
+            }
+            catch
+            {
+                delay = 0f;
+            }
+
+            
+            // Test if bind is condition
+            if (conditions.ContainsKey(trigger) && !hasCondition)
+            {
+                hasCondition = true;
+
+                cond = new Transition(nodeid, ifaceid, conditions[trigger].Item1, conditions[trigger].Item2);
+            }
+
+            // Test if bind is action
+            if (actions.ContainsKey(trigger))
+            {
+                acts.Add(new Action(nodeid, actions[trigger].Item1, actions[trigger].Item2, delay));
+            }
+
+        }
+
+        if (cond != null && acts.Count > 0)
+        {
+            doc.AddLink(cond, acts);
+        }
     }
 }

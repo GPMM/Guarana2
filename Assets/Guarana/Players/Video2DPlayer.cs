@@ -20,6 +20,8 @@ public class Video2DPlayer : Player
 
     public override void LoadContent(string src)
     {
+        media.TriggerTransition(EventType.PREPARATION, EventTransition.START);
+
         RenderTexture rt = new RenderTexture(256, 256, 16);
         rt.Create();
 
@@ -67,6 +69,13 @@ public class Video2DPlayer : Player
 
 
     public override void StopPresentation()
+    {
+        content.SetActive(false);
+        content.GetComponent<VideoPlayer>().Stop();
+    }
+
+
+    public override void AbortPresentation()
     {
         content.SetActive(false);
         content.GetComponent<VideoPlayer>().Stop();

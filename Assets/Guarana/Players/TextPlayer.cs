@@ -26,6 +26,7 @@ public class TextPlayer : Player
 
     public override void LoadContent(string src)
     {
+        media.TriggerTransition(EventType.PREPARATION, EventTransition.START);
         StartCoroutine(manager.DownloadText(src, this));
     }
 
@@ -44,6 +45,12 @@ public class TextPlayer : Player
 
 
     public override void StopPresentation()
+    {
+        content.SetActive(false);
+    }
+
+
+    public override void AbortPresentation()
     {
         content.SetActive(false);
     }

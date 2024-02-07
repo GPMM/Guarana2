@@ -19,6 +19,7 @@ public class Image2DPlayer : Player
 
     public override void LoadContent(string src)
     {
+        media.TriggerTransition(EventType.PREPARATION, EventTransition.START);
         StartCoroutine(manager.DownloadImage(src, this));
     }
 
@@ -37,6 +38,12 @@ public class Image2DPlayer : Player
 
 
     public override void StopPresentation()
+    {
+        content.SetActive(false);
+    }
+
+
+    public override void AbortPresentation()
     {
         content.SetActive(false);
     }

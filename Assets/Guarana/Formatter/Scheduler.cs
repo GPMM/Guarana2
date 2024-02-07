@@ -4,26 +4,11 @@ using UnityEngine;
 
 public class Scheduler : MonoBehaviour
 {
-    private class Action
-    {
-        public string nodeid;
-        public EventType evt;
-        public EventTransition trans;
-        public float delay;
-    }
-
-    private class Transition
-    {
-        public string nodeid;
-        public EventType evt;
-        public EventTransition trans;
-    }
-
     private Document doc;
     private List<Action> actions;
     private List<Action> delayedActions;
     private List<Transition> eventTransitions;
-    private GuaranaManager manager;
+    private Formatter formatter;
 
 
     void Start()
@@ -31,7 +16,7 @@ public class Scheduler : MonoBehaviour
         actions = new List<Action>();
         delayedActions = new List<Action>();
         eventTransitions = new List<Transition>();
-        manager = transform.parent.gameObject.GetComponent<GuaranaManager>();
+        formatter = transform.parent.gameObject.GetComponent<Formatter>();
     }
 
     
@@ -59,21 +44,24 @@ public class Scheduler : MonoBehaviour
             delayedActions = temp;
         }
 
-        if (actions.Count > 0)
+        // execute actions from Ginga and those created from links
+        while (actions.Count > 0)
         {
-            foreach (Action act in actions)
-            {
-                doc.EvalAction(act.nodeid, act.evt, act.trans);
-            }
+            List<Action> aux = new List<Action>(actions);
             actions.Clear();
+            foreach (Action act in aux)
+            {
+                doc.EvalAction(act);
+            }
         }
+
+        doc.UpdateState();
 
         if (eventTransitions.Count > 0)
         {
             foreach (Transition t in eventTransitions)
             {
-                Debug.Log("Scheduler Trans: " + t.nodeid + " " + t.evt + " " + t.trans);
-                manager.NotifyEventTransition(t.nodeid, t.evt, t.trans);
+                formatter.NotifyEventTransition(t.nodeid, t.evt, t.trans);
             }
             eventTransitions.Clear();
         }
@@ -87,38 +75,23 @@ public class Scheduler : MonoBehaviour
     }
 
 
-    public void AddAction(string nodeid, EventType evt, EventTransition trans)
+    public void AddAction(Action a)
     {
-        Debug.Log("Scheduler Action: " + nodeid + ", " + evt + ", " + trans);
-        Action a = new Action();
-        a.nodeid = nodeid;
-        a.evt = evt;
-        a.trans = trans;
-
+        //Debug.Log("Scheduler Action: " + a.nodeid + ", " + a.evt + ", " + a.trans);
         actions.Add(a);
     }
 
 
-    public void AddDelayedAction(string nodeid, EventType evt, EventTransition trans, float delay)
+    public void AddDelayedAction(Action a)
     {
-        Debug.Log("Scheduler DAction: " + nodeid + ", " + evt + ", " + trans + ", " + delay);
-        Action a = new Action();
-        a.nodeid = nodeid;
-        a.evt = evt;
-        a.trans = trans;
-        a.delay = delay;
-
+        //Debug.Log("Scheduler DAction: " + a.nodeid + ", " + a.evt + ", " + a.trans + ", " + a.delay);
         delayedActions.Add(a);
     }
 
 
-    public void AddEventTransition(string nodeid, EventType evt, EventTransition trans)
+    public void AddEventTransition(Transition t)
     {
-        Transition t = new Transition();
-        t.nodeid = nodeid;
-        t.evt = evt;
-        t.trans = trans;
-
+        //Debug.Log("Scheduler Trans: " + t.nodeid + " " + t.evt + " " + t.trans);
         eventTransitions.Add(t);
     }
 }

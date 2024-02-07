@@ -52,6 +52,8 @@ public class Video360Player : Player
 
     public override void LoadContent(string src)
     {
+        media.TriggerTransition(EventType.PREPARATION, EventTransition.START);
+
         VideoPlayer video = content.GetComponent<VideoPlayer>();
         video.url = manager.SetupVideoURL(src);
         video.prepareCompleted += Prepared;
@@ -94,6 +96,14 @@ public class Video360Player : Player
 
 
     public override void StopPresentation()
+    {
+        content.SetActive(false);
+        content.GetComponent<VideoPlayer>().Stop();
+        RenderSettings.skybox = emptySkyBox;
+    }
+
+
+    public override void AbortPresentation()
     {
         content.SetActive(false);
         content.GetComponent<VideoPlayer>().Stop();

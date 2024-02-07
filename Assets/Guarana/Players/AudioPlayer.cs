@@ -31,6 +31,7 @@ public class AudioPlayer : Player
         AudioSource audio = content.GetComponent<AudioSource>();
         audio.loop = false;
 
+        media.TriggerTransition(EventType.PREPARATION, EventTransition.START);
         StartCoroutine(manager.DownloadAudio(src, this));
     }
 
@@ -68,6 +69,13 @@ public class AudioPlayer : Player
 
 
     public override void StopPresentation()
+    {
+        content.SetActive(false);
+        content.GetComponent<AudioSource>().Stop();
+    }
+
+
+    public override void AbortPresentation()
     {
         content.SetActive(false);
         content.GetComponent<AudioSource>().Stop();

@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-
 
 public enum EventType { PRESENTATION, PREPARATION, VIEW, SELECTION, FOCUS };
 public enum EventState { OCCURRING, SLEEPING, PAUSED };
@@ -71,6 +68,45 @@ public class Event
                     return false;
 
                 mystate = EventState.OCCURRING;
+                break;
+        }
+
+        return true;
+    }
+
+
+    public bool CheckTransition(EventTransition t)
+    {
+        switch (t)
+        {
+            case EventTransition.START:
+                if (mystate != EventState.SLEEPING)
+                    return false;
+
+                break;
+
+            case EventTransition.STOP:
+                if (mystate == EventState.SLEEPING)
+                    return false;
+
+                break;
+
+            case EventTransition.ABORT:
+                if (mystate == EventState.SLEEPING)
+                    return false;
+
+                break;
+
+            case EventTransition.PAUSE:
+                if (mystate != EventState.OCCURRING)
+                    return false;
+
+                break;
+
+            case EventTransition.RESUME:
+                if (mystate != EventState.PAUSED)
+                    return false;
+
                 break;
         }
 
