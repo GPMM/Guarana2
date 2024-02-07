@@ -260,28 +260,28 @@ public class Media
         Player imp = player.GetComponent<Player>();
         imp.SetMedia(this);
 
-        //if (!inSky)
-        //{
-        //    if (mime == BaseMimeType.text)
-        //    {
-        //        ((TextPlayer) imp).SetPosition(azimuthal, polar, radius);
-        //        ((TextPlayer) imp).SetSize(width, height);
-        //    }
-        //    else
-        //    {
-        //        imp.SetPosition(azimuthal, polar, radius);
-        //        imp.SetSize(width, height);
-        //    }
-        //}
-        //else
-        //{
-        //    ((Video360Player) imp).ConfigureProjection(proj);
-        //}
+        if (!inSky)
+        {
+            if (mime == BaseMimeType.text)
+            {
+                ((TextPlayer)imp).SetPosition(azimuthal, polar, radius);
+                ((TextPlayer)imp).SetSize(width, height);
+            }
+            else
+            {
+                imp.SetPosition(azimuthal, polar, radius);
+                imp.SetSize(width, height);
+            }
+        }
+        else
+        {
+            ((Video360Player)imp).ConfigureProjection(proj);
+        }
 
-        //if (mime == BaseMimeType.audio || mime == BaseMimeType.video)
-        //{
-        //    imp.ConfigureSound(soundType, volume);
-        //}
+        if (mime == BaseMimeType.audio || mime == BaseMimeType.video)
+        {
+            imp.ConfigureSound(soundType, volume);
+        }
 
         imp.LoadContent(src);
     }
