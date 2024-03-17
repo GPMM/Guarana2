@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,6 +21,9 @@ public class WebService : MonoBehaviour
         { 3, 8 }, //Paused
     };
     private int current = 0;
+
+    public System.Action<MultidevMetadata> onMessage;
+    public System.Action<bool> onRunning;
 
 
     void Awake()
@@ -98,13 +102,25 @@ public class WebService : MonoBehaviour
 
         // Goes to the next state, check if input is necessary
         current = next[current, ((int)output.status)];
-        if (oldstate == "Registering" || oldstate == "Connecting" || oldstate == "Paused")
+        string currentstate = state[current].name;
+        if (currentstate == "Running")
+        {
+            ((RunningInput)output).messageHandler = onMessage;
+        }
+
+        if (currentstate == "Connecting" || currentstate == "Running" || currentstate == "Paused" || currentstate == "Unregistering")
         {
             state[current].GetComponent<WSStep>().Initialize(dtv, output);
         }
         else
         {
             state[current].GetComponent<WSStep>().Initialize(dtv);
+        }
+
+        //Notify that is running
+        if (currentstate == "Running")
+        {
+            onRunning(true);
         }
     }
 
@@ -118,5 +134,7 @@ public class WebService : MonoBehaviour
 
         current = 8;
         state[current].GetComponent<WSStep>().Initialize(dtv, output);
+
+        onRunning(false);
     }
 }

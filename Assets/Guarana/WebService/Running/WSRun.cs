@@ -28,19 +28,28 @@ public class WSRun : WSStep
     public void ReceiveMessage(object sender, MessageEventArgs e)
     {
         string data = e.Data;
-        if (data.Contains("appId"))
+        if (data.Contains("nodeId"))
         {
-            //TODO
+            NodeMeta metadata = JsonUtility.FromJson<NodeMeta>(data);
+            ((RunningInput)input).messageHandler(metadata);
         }
         else if (data.Contains("eventType"))
         {
-            //TODO
+            ActionMeta metadata = JsonUtility.FromJson<ActionMeta>(data);
+            ((RunningInput)input).messageHandler(metadata);
         }
         else
         {
             Debug.Log("Message not recognized");
         }
-        Debug.Log(data);
+        //Debug.Log(data);
+    }
+
+
+    public void SendMessage(MultidevMetadata msg)
+    {
+        string data = JsonUtility.ToJson(msg);
+        ((RunningInput)input).ws.Send(data);
     }
 
 

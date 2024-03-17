@@ -49,6 +49,7 @@ public class RunningInput : WSStepIO
 {
     public string handle;
     public WebSocket ws;
+    public System.Action<MultidevMetadata> messageHandler;
 
     public override string ToString()
     {
