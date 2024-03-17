@@ -34,9 +34,10 @@ public class RegisterDevice : WSStep
 
     private void CompleteRegister(DTVRemoteDeviceReturn result)
     {
-        output = new RegisterOutput();
-        ((RegisterOutput)output).handle = result.handle;
-        ((RegisterOutput)output).url = result.url;
+        output = new ConnectInput();
+        ((ConnectInput)output).handle = result.handle;
+        ((ConnectInput)output).url = result.url;
+        ((ConnectInput)output).resume = false;
 
         if (result.handle == null)
         {

@@ -24,16 +24,26 @@ public class ConnectWebSocket : WSStep
     {
         running = true;
 
-        WebSocket ws = new WebSocket(((RegisterOutput)input).url);
+        WebSocket ws = new WebSocket(((ConnectInput)input).url);
         ws.OnOpen += (sender, e) =>
         {
             if (!gameObject.activeInHierarchy)
                 return;
 
-            output = new ConnectOutput();
+            if (((ConnectInput)input).resume)
+            {
+                NotifyTransition msg = new NotifyTransition();
+                msg.node = ((ConnectInput)input).nodeid;
+                msg.eventType = (EventType.PRESENTATION.ToString()).ToLower();
+                msg.transition = (EventTransition.RESUME.ToString()).ToLower() + "s";
+
+                ws.Send(JsonUtility.ToJson(msg));
+            }
+
+            output = new RunningInput();
             output.status = WSStepStatus.OK;
-            ((ConnectOutput)output).handle = ((RegisterOutput)input).handle;
-            ((ConnectOutput)output).ws = ws;
+            ((RunningInput)output).handle = ((ConnectInput)input).handle;
+            ((RunningInput)output).ws = ws;
             running = false;
         };
 

@@ -1,7 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using WebSocketSharp;
 
 public enum WSStepStatus
@@ -32,20 +28,24 @@ public class DiscoveryOutput : WSStepIO
     }
 }
 
-public class RegisterOutput : WSStepIO
+public class ConnectInput : WSStepIO
 {
+    public string nodeid;
     public string handle;
     public string url;
+    public bool resume;
 
     public override string ToString()
     {
         return "{\n\tstatus: " + status.ToString() +
+                "\n\tnodeid: " + nodeid +
                 "\n\thandle: " + handle +
-                "\n\turl: " + url + "\n}";
+                "\n\turl: " + url +
+                "\n\tresume: " + resume + "\n}";
     }
 }
 
-public class ConnectOutput : WSStepIO
+public class RunningInput : WSStepIO
 {
     public string handle;
     public WebSocket ws;
@@ -59,12 +59,29 @@ public class ConnectOutput : WSStepIO
 }
 
 
-public class IdentifyingInput : WSStepIO
+public class UnregisteringInput : WSStepIO
 {
-    public bool reload;
+    public string handle;
 
     public override string ToString()
     {
-        return "{\n\treload: " + reload.ToString() + "\n}";
+        return "{\n\tstatus: " + status.ToString() +
+                "\n\thandle: " + handle + "\n}";
+    }
+}
+
+
+public class PausedInput : WSStepIO
+{
+    public string nodeid;
+    public string handle;
+    public WebSocket ws;
+
+    public override string ToString()
+    {
+        return "{\n\tstatus: " + status.ToString() +
+                "\n\tnodeid: " + nodeid +
+                "\n\thandle: " + handle +
+                "\n\tws: " + ws.ToString() + "\n}";
     }
 }
