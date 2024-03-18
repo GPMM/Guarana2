@@ -17,6 +17,8 @@ public class TestScheduler : Formatter
     void Awake()
     {
         scheduler = transform.Find("Scheduler").gameObject;
+        scheduler.GetComponent<Scheduler>().notifyTransition = NotifyEventTransition;
+        scheduler.GetComponent<Scheduler>().endDocument = RemoveDocument;
 
         storedActionMsg = new List<Action>();
 
@@ -68,7 +70,7 @@ public class TestScheduler : Formatter
     }
 
 
-    public override void NotifyEventTransition(string nodeid, EventType evt, EventTransition trans)
+    public void NotifyEventTransition(string nodeid, EventType evt, EventTransition trans)
     {
         string t = "Notify: (";
 
@@ -78,6 +80,12 @@ public class TestScheduler : Formatter
         t += ")";
 
         //Debug.Log(t);
+    }
+
+
+    public void RemoveDocument()
+    {
+
     }
 
 
@@ -96,6 +104,18 @@ public class TestScheduler : Formatter
         player.AddComponent<TestPlayer>();
 
         return player;
+    }
+
+
+    public override void DownloadContent<T>(string url, Action<T> callback)
+    {
+        
+    }
+
+
+    public override string SetupVideoURL(string src)
+    {
+        return src;
     }
 
 
