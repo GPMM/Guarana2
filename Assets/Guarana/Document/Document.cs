@@ -75,6 +75,12 @@ public class Document
     }
 
 
+    public bool Ended()
+    {
+        return presentation.State() == EventState.SLEEPING && presentation.Occurrences() > 0;
+    }
+
+
     public void EvalTick(float time)
     {
         if (!Running())

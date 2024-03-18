@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -81,5 +79,11 @@ public class CurrentService
 
         api.SetCurrentServiceHeaders(wr);
         yield return api.CreateDownloadCoroutine<T>(wr, callback);
+    }
+
+
+    public string GetAppsFilesURL(string appId, string path)
+    {
+        return ApiURL + "/apps/" + appId + "/files?path=" + path;
     }
 }

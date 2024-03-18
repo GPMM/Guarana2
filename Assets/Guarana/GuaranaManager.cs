@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GuaranaManager : MonoBehaviour
+public class GuaranaManager : Formatter
 {
 
     [SerializeField]
@@ -20,177 +20,165 @@ public class GuaranaManager : MonoBehaviour
     private GameObject video360PlayerPrefab;
 
     private GameObject webservice;
-    private GameObject userSelector;
-    private DownloadManager downloadManager;
+    private GameObject identifying;
     private GameObject scheduler;
     private GameObject scene;
 
-    private WebSocketClient GingaCCWSClient;
-    private string GingaCCWSLocation;
+    private UserData activeUser;
+    private NodeMeta sceneMetadata;
+    private List<Action> storedActions;
 
-    private bool debugModeOn;
-    private ReceiveScene receivedScene;
-    private List<EventType> notifyEvents;
-    private List<ReceiveAction> storedActionMsg;
+    private bool checkForUser, checkForScene;
 
 
     void Awake()
     {
+        // Setup webservice before start running
         webservice = transform.Find("WebService").gameObject;
-        userSelector = transform.Find("UserSelector").gameObject;
-        downloadManager = transform.Find("Downloader").gameObject.GetComponent<DownloadManager>();
+        webservice.GetComponent<WebService>().onRunning = WSOnRunning;
+        webservice.GetComponent<WebService>().onMessage = WSOnMessage;
+        webservice.SetActive(false);
+
+        // Setup the user identification object
+        identifying = transform.Find("Identifying").gameObject;
+        identifying.SetActive(false);
+
+        // Setup the scheduler
         scheduler = transform.Find("Scheduler").gameObject;
-        scene = transform.Find("Scene").gameObject;
-
-        //TODO: create a first step to define debug mode?
-        debugModeOn = true;
-        notifyEvents = new List<EventType>();
-        storedActionMsg = new List<ReceiveAction>();
-
-        userSelector.SetActive(false);
+        scheduler.GetComponent<Scheduler>().notifyTransition = NotifyEventTransition;
+        scheduler.GetComponent<Scheduler>().endDocument = RemoveDocument;
         scheduler.SetActive(false);
+
+        // Setup remaining stuff
+        scene = transform.Find("Scene").gameObject;
+        storedActions = new List<Action>();
+        checkForUser = false;
+        checkForScene = false;
+    }
+
+
+    void Start()
+    {
+        webservice.SetActive(true);
     }
 
 
     void Update()
     {
-        if (userSelector.activeInHierarchy && !userSelector.GetComponent<UserSelector>().Running())
+        // Test if user identification is done
+        if (checkForUser && !identifying.activeInHierarchy)
+            OnUserIdentification();
+
+        // Test if there is a scene to parse
+        if (checkForScene)
+            OnSceneReceive();
+
+        // Test if there are actions to forward to the scheduler
+        if (storedActions.Count > 0)
+            ForwardActions();
+    }
+
+
+    public void WSOnRunning(bool isRunning)
+    {
+        if (isRunning && activeUser != null)
         {
-            // User identification is over, send to Ginga
-            NotifyUser msg = new NotifyUser();
-            msg.user = userSelector.GetComponent<UserSelector>().GetSelectedUser();
-            
-            GingaCCWSClient.SendMessage(msg);
-            userSelector.SetActive(false);
+            // webservice is at running stage, ask for user indentification
+            DTV dtv = webservice.GetComponent<WebService>().GetDTV();
+            identifying.GetComponent<Identifying>().Initialize(dtv, true);
+            checkForUser = true;
         }
 
-        if (receivedScene != null)
+        //TODO: anything to do on pause?
+    }
+
+
+    public void WSOnMessage(MultidevMetadata metadata)
+    {
+        if (metadata is NodeMeta)
         {
-            downloadManager.SetBaseLocation(GingaCCWSLocation, receivedScene.appId);
-            StartCoroutine(downloadManager.DownloadDocument(receivedScene.nodeSrc, this));
-            foreach (string e in receivedScene.notifyEvents)
+            sceneMetadata = (NodeMeta) metadata;
+            checkForScene = true;
+        }
+        else if (metadata is ActionMeta)
+        {
+            Action a;
+
+            EventType type = (EventType)Enum.Parse(typeof(EventType), ((ActionMeta) metadata).eventType, true);
+            EventTransition action = (EventTransition)Enum.Parse(typeof(EventTransition), ((ActionMeta)metadata).action, true);
+            string node = ((ActionMeta)metadata).node;
+            float delay = ((ActionMeta)metadata).delay;
+
+            if (delay > 0)
             {
-                try
-                {
-                    notifyEvents.Add((EventType)Enum.Parse(typeof(EventType), e, true));
-                }
-                catch (Exception ex) { Debug.Log(ex); }
+                a = new Action(node, type, action, ((ActionMeta)metadata).delay);
             }
-            receivedScene = null;
-        }
-
-        if (storedActionMsg.Count > 0)
-        {
-            // Forward messages to scheduler
-            List<ReceiveAction> temp = new List<ReceiveAction>();
-
-            foreach (ReceiveAction msg in storedActionMsg)
+            else
             {
-                EventType type = (EventType)Enum.Parse(typeof(EventType), msg.eventType, true);
-
-                // If user identification is ongoing, only preparation messages can go through
-                if (userSelector.activeInHierarchy && type != EventType.PREPARATION)
-                {
-                    temp.Add(msg);
-                    continue;
-                }
-
-                EventTransition action = (EventTransition)Enum.Parse(typeof(EventTransition), msg.action, true);
-
-                // Check if is an action over the document as a whole
-                if (msg.node == "DOC" && action == EventTransition.STOP)
-                {
-                    RemoveDocument();
-                    continue;
-                }
-
-                
-                if (msg.delay > 0)
-                {
-                    scheduler.GetComponent<Scheduler>().AddDelayedAction(msg.node, type, action, msg.delay);
-                }
-                else
-                {
-                    scheduler.GetComponent<Scheduler>().AddAction(msg.node, type, action);
-                }
-
+                a = new Action(node, type, action);
             }
-            storedActionMsg = temp;
+
+            storedActions.Add(a);
         }
     }
 
 
-    void OnApplicationPause(bool pauseStatus)
+    private void OnUserIdentification()
     {
-        EventTransition t;
-        if (pauseStatus)
+        checkForUser = false;
+        activeUser = identifying.GetComponent<Identifying>().GetActiveUser();
+    }
+
+    
+    private void OnSceneReceive()
+    {
+        checkForScene = false;
+
+        DownloadContent<string>(sceneMetadata.nodeSrc, SetSceneXML);
+    }
+
+    
+    private void ForwardActions()
+    {
+        List<Action> temp = new List<Action>();
+
+        foreach (Action act in storedActions)
         {
-            t = EventTransition.PAUSE;
+
+            // If user identification is ongoing, only preparation messages can go through
+            if (identifying.activeInHierarchy && act.evt != EventType.PREPARATION)
+            {
+                temp.Add(act);
+                continue;
+            }
+
+            if (act.delay > 0)
+            {
+                scheduler.GetComponent<Scheduler>().AddDelayedAction(act);
+            }
+            else
+            {
+                scheduler.GetComponent<Scheduler>().AddAction(act);
+            }
+
         }
-        else
-        {
-            t = EventTransition.RESUME;
-        }
-        NotifyEventTransition("", EventType.PRESENTATION, t);
+        storedActions = temp;
     }
 
-
-    void OnApplicationFocus(bool hasFocus)
+    
+    public void SetSceneXML(string xmldoc)
     {
-        EventTransition t;
-        if (!hasFocus)
-        {
-            t = EventTransition.PAUSE;
-        }
-        else
-        {
-            t = EventTransition.RESUME;
-        }
-        NotifyEventTransition("", EventType.FOCUS, t);
-    }
-
-
-    public bool DebugMode()
-    {
-        return debugModeOn;
-    }
-
-
-    public void HasConnected(WebSocketClient GingaCCWSClient, string GingaCCWSLocation)
-    {
-        this.GingaCCWSClient = GingaCCWSClient;
-        this.GingaCCWSLocation = GingaCCWSLocation;
-        
-        // Ask for user identification
-        userSelector.GetComponent<UserSelector>().SetBaseLocation(GingaCCWSLocation);
-        
-        webservice.SetActive(false);
-        userSelector.SetActive(true);
-    }
-
-
-    public void ReceivedDocument(ReceiveScene msg)
-    {
-        receivedScene = msg;
-    }
-
-
-    public void SetDocument(string xmldoc)
-    {
-        Debug.Log("Received document");
-        // No problem to parse and start scheduler if user identification is ongoing
         XMLParser parser = new XMLParser();
-        Document doc = parser.Parse(xmldoc);
-        doc.SetManager(this);
+        Document doc = parser.Parse(xmldoc, sceneMetadata.nodeId);
+        doc.SetFormatter(this);
 
         scheduler.GetComponent<Scheduler>().SetDocument(doc);
         scheduler.SetActive(true);
     }
 
-
+    
     public void RemoveDocument()
     {
-        scheduler.SetActive(false);
         for (int i = scene.transform.childCount - 1; i >= 0; i--)
         {
             Destroy(scene.transform.GetChild(i).gameObject);
@@ -199,31 +187,23 @@ public class GuaranaManager : MonoBehaviour
         {
             Destroy(xrcamera.transform.GetChild(i).gameObject);
         }
-        Debug.Log("Received document termination");
+        //Debug.Log("Received document termination");
     }
 
-
-    public void ReceiveAction(ReceiveAction msg)
-    {
-        storedActionMsg.Add(msg);
-    }
-
-
+    
     public void NotifyEventTransition(string nodeid, EventType evt, EventTransition trans)
     {
-        if (!notifyEvents.Contains(evt))
-            return;
+        TransitionMeta metadata = new TransitionMeta();
+        metadata.node = nodeid;
+        metadata.eventType = Enum.GetName(typeof(EventType), evt).ToLower();
+        metadata.transition = Enum.GetName(typeof(EventTransition), trans).ToLower() + "s";
+        metadata.user = activeUser.id;
 
-        NotifyTransition msg = new NotifyTransition();
-        msg.node = nodeid;
-        msg.eventType = Enum.GetName(typeof(EventType), evt).ToLower();
-        msg.transition = Enum.GetName(typeof(EventTransition), trans).ToLower() + "s";
-        
-        GingaCCWSClient.SendMessage(msg);
+        webservice.GetComponent<WebService>().SendMessage(metadata);
     }
 
-
-    public GameObject GeneratePlayer(BaseMimeType mime, ScenePin pin)
+    
+    public override GameObject GeneratePlayer(BaseMimeType mime, ScenePin pin)
     {
         GameObject player;
 
@@ -255,7 +235,7 @@ public class GuaranaManager : MonoBehaviour
         player.transform.localPosition = new Vector3(0, 0, 0);
         player.transform.LookAt(Vector3.zero);
 
-        player.GetComponent<Player>().SetDownloadManager(downloadManager.GetComponent<DownloadManager>());
+        player.GetComponent<Player>().SetFormatter(this);
 
         if (pin == ScenePin.ENVIRONMENT)
             player.transform.parent = scene.transform;
@@ -265,8 +245,8 @@ public class GuaranaManager : MonoBehaviour
         return player;
     }
 
-
-    public GameObject GenerateSkyPlayer(BaseMimeType mime)
+    
+    public override GameObject GenerateSkyPlayer(BaseMimeType mime)
     {
         GameObject player;
 
@@ -276,7 +256,7 @@ public class GuaranaManager : MonoBehaviour
         //}
         //else if (mime == BaseMimeType.video)
         //{
-            player = Instantiate(video360PlayerPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+        player = Instantiate(video360PlayerPrefab, new Vector3(0, 0, 0), Quaternion.identity);
         //}
         //else
         //{
@@ -284,10 +264,51 @@ public class GuaranaManager : MonoBehaviour
         //}
 
         player.transform.localPosition = new Vector3(0, 0, 0);
-        
-        player.GetComponent<Player>().SetDownloadManager(downloadManager.GetComponent<DownloadManager>());
+
+        player.GetComponent<Player>().SetFormatter(this);
         player.transform.parent = scene.transform;
 
         return player;
+    }
+
+
+    public override void DownloadContent<T>(string url, Action<T> callback)
+    {
+        if (url.StartsWith("http"))
+        {
+            HTTP http = new HTTP();
+            http.GetFile<T>(url, callback);
+        }
+        else
+        {
+            DTV dtv = webservice.GetComponent<WebService>().GetDTV();
+            dtv.CurrentService.GetAppsFiles<T>(sceneMetadata.appId, url, callback);
+        }
+    }
+
+
+    public override string SetupVideoURL(string src)
+    {
+        if (src.StartsWith("rtp://") || src.StartsWith("rtsp://") || src.StartsWith("http://") || src.StartsWith("https://"))
+        {
+            return src;
+        }
+
+        if (src.StartsWith("sbtvd-ts://"))
+        {
+            //TODO
+        }
+
+        if (src.StartsWith("/"))
+        {
+            src = src.Substring(1);
+        }
+        else if (src.StartsWith("./"))
+        {
+            src = src.Substring(2);
+        }
+
+        DTV dtv = webservice.GetComponent<WebService>().GetDTV();
+        return dtv.CurrentService.GetAppsFilesURL(sceneMetadata.appId, src);
     }
 }

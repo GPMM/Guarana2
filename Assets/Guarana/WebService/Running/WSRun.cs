@@ -3,6 +3,7 @@ using WebSocketSharp;
 
 public class WSRun : WSStep
 {
+    private string nodeid;
     
     void Start()
     {
@@ -31,6 +32,7 @@ public class WSRun : WSStep
         if (data.Contains("nodeId"))
         {
             NodeMeta metadata = JsonUtility.FromJson<NodeMeta>(data);
+            nodeid = metadata.nodeId;
             ((RunningInput)input).messageHandler(metadata);
         }
         else if (data.Contains("eventType"))
@@ -46,9 +48,9 @@ public class WSRun : WSStep
     }
 
 
-    public void SendMessage(MultidevMetadata msg)
+    public void SendMessage(MultidevMetadata metadata)
     {
-        string data = JsonUtility.ToJson(msg);
+        string data = JsonUtility.ToJson(metadata);
         ((RunningInput)input).ws.Send(data);
     }
 
@@ -89,6 +91,7 @@ public class WSRun : WSStep
         output.status = WSStepStatus.OK;
         ((PausedInput)output).ws = ((RunningInput)input).ws;
         ((PausedInput)output).handle = ((RunningInput)input).handle;
+        ((PausedInput)output).nodeid = nodeid;
 
         running = false;
     }

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Image2DPlayer : Player
@@ -20,7 +18,7 @@ public class Image2DPlayer : Player
     public override void LoadContent(string src)
     {
         media.TriggerTransition(EventType.PREPARATION, EventTransition.START);
-        StartCoroutine(manager.DownloadImage(src, this));
+        formatter.DownloadContent<Texture2D>(src, SetContent);
     }
 
 

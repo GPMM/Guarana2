@@ -137,4 +137,19 @@ public class WebService : MonoBehaviour
 
         onRunning(false);
     }
+
+
+    public DTV GetDTV()
+    {
+        return dtv;
+    }
+
+
+    public void SendMessage(MultidevMetadata metadata)
+    {
+        if (state[current].name == "Running")
+        {
+            state[current].GetComponent<WSRun>().SendMessage(metadata);
+        }
+    }
 }

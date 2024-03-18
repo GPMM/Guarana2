@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
@@ -27,7 +25,7 @@ public class TextPlayer : Player
     public override void LoadContent(string src)
     {
         media.TriggerTransition(EventType.PREPARATION, EventTransition.START);
-        StartCoroutine(manager.DownloadText(src, this));
+        formatter.DownloadContent<string>(src, SetContent);
     }
 
 

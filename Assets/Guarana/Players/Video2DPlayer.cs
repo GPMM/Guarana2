@@ -29,7 +29,7 @@ public class Video2DPlayer : Player
 
         VideoPlayer video = content.GetComponent<VideoPlayer>();
         video.targetTexture = rt;
-        video.url = manager.SetupVideoURL(src);
+        video.url = formatter.SetupVideoURL(src);
         video.prepareCompleted += Prepared;
         video.loopPointReached += NaturalEnd;
         video.Prepare();

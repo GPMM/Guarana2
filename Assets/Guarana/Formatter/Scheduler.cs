@@ -8,7 +8,9 @@ public class Scheduler : MonoBehaviour
     private List<Action> actions;
     private List<Action> delayedActions;
     private List<Transition> eventTransitions;
-    private Formatter formatter;
+
+    public System.Action<string, EventType, EventTransition> notifyTransition;
+    public System.Action endDocument;
 
 
     void Start()
@@ -16,7 +18,6 @@ public class Scheduler : MonoBehaviour
         actions = new List<Action>();
         delayedActions = new List<Action>();
         eventTransitions = new List<Transition>();
-        formatter = transform.parent.gameObject.GetComponent<Formatter>();
     }
 
     
@@ -61,9 +62,16 @@ public class Scheduler : MonoBehaviour
         {
             foreach (Transition t in eventTransitions)
             {
-                formatter.NotifyEventTransition(t.nodeid, t.evt, t.trans);
+                notifyTransition(t.nodeid, t.evt, t.trans);
             }
             eventTransitions.Clear();
+        }
+
+        // if document execution ended, stop the scheduler
+        if (doc.Ended() && delayedActions.Count == 0)
+        {
+            gameObject.SetActive(false);
+            endDocument();
         }
     }
 

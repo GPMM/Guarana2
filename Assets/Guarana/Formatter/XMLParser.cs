@@ -161,7 +161,7 @@ public class XMLParser
 
         try
         {
-            string aux = node.Attributes["project"].InnerText;
+            string aux = node.Attributes["projection"].InnerText;
             media.SetProjection((ProjectionType)Enum.Parse(typeof(ProjectionType), aux, true));
         }
         catch { }
@@ -255,11 +255,11 @@ public class XMLParser
             string nodeid, trigger, ifaceid;
             float delay;
 
-            nodeid = bind.Attributes["media"].InnerText;
+            nodeid = bind.Attributes["component"].InnerText;
             if (!doc.HasMedia(nodeid))
                 continue;
 
-            trigger = bind.Attributes["trigger"].InnerText;
+            trigger = bind.Attributes["role"].InnerText;
 
             try
             {

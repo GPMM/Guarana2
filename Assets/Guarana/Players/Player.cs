@@ -6,7 +6,7 @@ public abstract class Player : MonoBehaviour
     [SerializeField]
     protected GameObject content;
     protected Media media;
-    protected DownloadManager manager;
+    protected Formatter formatter;
 
     protected bool inView;
 
@@ -42,9 +42,9 @@ public abstract class Player : MonoBehaviour
     }
 
 
-    public void SetDownloadManager(DownloadManager manager)
+    public void SetFormatter(Formatter formatter)
     {
-        this.manager = manager;
+        this.formatter = formatter;
     }
 
 

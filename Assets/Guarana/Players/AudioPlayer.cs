@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class AudioPlayer : Player
@@ -32,7 +30,8 @@ public class AudioPlayer : Player
         audio.loop = false;
 
         media.TriggerTransition(EventType.PREPARATION, EventTransition.START);
-        StartCoroutine(manager.DownloadAudio(src, this));
+
+        formatter.DownloadContent<AudioClip>(src, SetContent);
     }
 
 

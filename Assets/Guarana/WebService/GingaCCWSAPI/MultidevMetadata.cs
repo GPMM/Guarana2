@@ -27,7 +27,7 @@ public class ActionMeta : MultidevMetadata
     public string eventType;
     public string action;
     public string value;
-    public int delay;
+    public float delay;
 }
 
 

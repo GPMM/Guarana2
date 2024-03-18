@@ -71,9 +71,9 @@ public class Identifying : MonoBehaviour
         }
     }
 
-    public void Stop()
+    public UserData GetActiveUser()
     {
-        gameObject.SetActive(false);
+        return activeUser;
     }
 
 

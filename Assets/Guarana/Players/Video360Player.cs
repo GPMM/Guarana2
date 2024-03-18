@@ -55,7 +55,7 @@ public class Video360Player : Player
         media.TriggerTransition(EventType.PREPARATION, EventTransition.START);
 
         VideoPlayer video = content.GetComponent<VideoPlayer>();
-        video.url = manager.SetupVideoURL(src);
+        video.url = formatter.SetupVideoURL(src);
         video.prepareCompleted += Prepared;
         video.loopPointReached += NaturalEnd;
         video.Prepare();

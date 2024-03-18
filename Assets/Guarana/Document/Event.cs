@@ -30,6 +30,12 @@ public class Event
     }
 
 
+    public int Occurrences()
+    {
+        return occurrences;
+    }
+
+
     public bool Transition(EventTransition t)
     {
         switch (t)
