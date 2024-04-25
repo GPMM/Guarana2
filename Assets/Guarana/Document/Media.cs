@@ -88,9 +88,15 @@ public class Media
     }
 
 
-    public bool IsOccurring()
+    public bool IsPresenting()
     {
-        return presentation.State() == EventState.OCCURRING || preparation.State() == EventState.OCCURRING;
+        return presentation.State() == EventState.OCCURRING;
+    }
+
+
+    public bool IsPreparing()
+    {
+        return preparation.State() == EventState.OCCURRING;
     }
 
 
@@ -126,7 +132,7 @@ public class Media
         EventType evt = a.evt;
         EventTransition trans = a.trans;
 
-        if (evt == EventType.PREPARATION && trans == EventTransition.START && preparation.Transition(trans))
+        if (evt == EventType.PREPARATION && trans == EventTransition.START && preparation.CheckTransition(trans))
         {
             StartPreparation();
         }

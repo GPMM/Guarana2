@@ -3,7 +3,7 @@ using System.Collections.Generic;
 public class Document
 {
     private string id;
-    private Event presentation;
+    private Event presentation, preparation;
     private Dictionary<string, Media> medias;
     private List<Action> ports;
     private Dictionary<Transition, List<Action>> links;
@@ -14,6 +14,7 @@ public class Document
     {
         this.id = id;
         presentation = new Event(EventType.PRESENTATION);
+        preparation = new Event(EventType.PREPARATION);
 
         medias = new Dictionary<string, Media>();
         ports = new List<Action>();
@@ -96,7 +97,7 @@ public class Document
     public void EvalAction(Action action)
     {
         // Test if is an action in the document
-        if (action.nodeid == id && presentation.Transition(action.trans))
+        if (action.nodeid == id && action.evt == EventType.PRESENTATION && presentation.Transition(action.trans))
         {
             switch (action.trans)
             {
@@ -116,6 +117,10 @@ public class Document
                     break;
             }
         }
+        else if (action.nodeid == id && action.evt == EventType.PREPARATION && preparation.Transition(action.trans))
+        {
+            StartPreparation();
+        }
         else if (medias.ContainsKey(action.nodeid))
         {
             medias[action.nodeid].EvalAction(action);
@@ -134,23 +139,27 @@ public class Document
             }
         }
 
-        scheduler.AddEventTransition(trans);
+        if (trans.ifaceid == null)
+            scheduler.AddEventTransition(trans);
     }
 
 
     public void UpdateState()
     {
-        bool occurring = false;
+        bool presenting = false;
+        bool preparing = false;
         bool paused = false;
 
         foreach (KeyValuePair<string, Media> kvp in medias)
         {
-            occurring |= kvp.Value.IsOccurring();
+            presenting |= kvp.Value.IsPresenting();
+            preparing |= kvp.Value.IsPreparing();
             paused |= kvp.Value.IsPaused();
         }
 
+        // Update the PRESENTATION state, if it is the case
         EventTransition trans = EventTransition.STOP;
-        if (occurring)
+        if (presenting)
         {
             trans = EventTransition.START;
         }
@@ -163,6 +172,27 @@ public class Document
         {
             EvalEventTransition(new Transition(id, EventType.PRESENTATION, trans));
         }
+
+        // Update the PREPARATION state, if it is the case
+        trans = EventTransition.STOP;
+        if (preparing)
+        {
+            trans = EventTransition.START;
+        }
+
+        if (preparation.Transition(trans))
+        {
+            EvalEventTransition(new Transition(id, EventType.PREPARATION, trans));
+        }
+    }
+
+
+    public void StartPreparation()
+    {
+        EvalEventTransition(new Transition(id, EventType.PREPARATION, EventTransition.START));
+
+        foreach (KeyValuePair<string, Media> kvp in medias)
+            kvp.Value.EvalAction(new Action(kvp.Value.GetId(), EventType.PREPARATION, EventTransition.START));
     }
 
 
