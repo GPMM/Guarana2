@@ -44,8 +44,7 @@ public class DTVTokenReturn : APIMessageBody
 public class DTVRemoteDeviceBody : APIMessageBody
 {
     public string deviceClass;
-    public List<string> supportedFormats;
-    public List<string> recognizableEvents;
+    public List<string> supportedTypes;
 }
 
 

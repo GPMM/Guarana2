@@ -26,9 +26,14 @@ public class GuaranaManager : Formatter
 
     private UserData activeUser;
     private NodeMeta sceneMetadata;
+    private DTV dtv;
     private List<Action> storedActions;
+    private Dictionary<string, string> bindToken = new Dictionary<string, string>()
+    {
+        { "fe2481ea-5d44-4225-884b-504782636c3a", "00000000-0000-0000-0000-000000000000" }
+    };
 
-    private bool checkForUser, checkForScene;
+    private bool checkForService, checkForUser, checkForScene, canRequestForService, waitServiceForUser, waitServiceForScene;
 
 
     void Awake()
@@ -54,6 +59,10 @@ public class GuaranaManager : Formatter
         storedActions = new List<Action>();
         checkForUser = false;
         checkForScene = false;
+        checkForService = false;
+        canRequestForService = false;
+        waitServiceForUser = false;
+        waitServiceForScene = false;
     }
 
 
@@ -65,6 +74,15 @@ public class GuaranaManager : Formatter
 
     void Update()
     {
+        // Test if has bindToken for the current service
+        if (checkForService)
+        {
+            checkForService = false;
+            if (dtv == null)
+                dtv = webservice.GetComponent<WebService>().GetDTV();
+            StartCoroutine(dtv.GetCurrentService(CheckCurrentService));
+        }
+
         // Test if user identification is done
         if (checkForUser && !identifying.activeInHierarchy)
             OnUserIdentification();
@@ -81,15 +99,24 @@ public class GuaranaManager : Formatter
 
     public void WSOnRunning(bool isRunning)
     {
-        if (isRunning && activeUser != null)
-        {
-            // webservice is at running stage, ask for user indentification
-            DTV dtv = webservice.GetComponent<WebService>().GetDTV();
-            identifying.GetComponent<Identifying>().Initialize(dtv, true);
-            checkForUser = true;
-        }
+        dtv = webservice.GetComponent<WebService>().GetDTV();
 
-        //TODO: anything to do on pause?
+        if (isRunning && activeUser == null)
+        {
+            if (!canRequestForService)
+            {
+                // Check the service if has bind-token
+                checkForService = true;
+
+                // After check for the user
+                waitServiceForUser = true;
+            }
+            else
+            {
+                // Do it now
+                CheckUser();
+            }
+        }
     }
 
 
@@ -97,11 +124,35 @@ public class GuaranaManager : Formatter
     {
         if (metadata is NodeMeta)
         {
+            if (((NodeMeta)metadata).type != "application/x-ncl360")
+            {
+                Debug.Log("Unsupported node type");
+                return;
+            }
+
             sceneMetadata = (NodeMeta) metadata;
-            checkForScene = true;
+
+            if (!canRequestForService)
+            {
+                // Check the service if has bind-token
+                checkForService = true;
+
+                // After check for the user
+                waitServiceForScene = true;
+            }
+            else
+            {
+                checkForScene = true;
+            }
         }
         else if (metadata is ActionMeta)
         {
+            if (sceneMetadata == null || ((ActionMeta)metadata).appId != sceneMetadata.appId)
+            {
+                Debug.Log("Action not related to scene");
+                return;
+            }
+
             Action a;
 
             EventType type = (EventType)Enum.Parse(typeof(EventType), ((ActionMeta) metadata).eventType, true);
@@ -123,6 +174,41 @@ public class GuaranaManager : Formatter
     }
 
 
+    private void CheckCurrentService(DTVCurrentServiceReturn service)
+    {
+        if (bindToken.ContainsKey(service.serviceId))
+        {
+            dtv.CurrentService.SetBindToken(bindToken[service.serviceId]);
+            canRequestForService = true;
+        }
+        else
+        {
+            canRequestForService = false;
+        }
+
+        // Now can try to do whatever was waiting
+        if (waitServiceForUser)
+        {
+            CheckUser();
+            waitServiceForUser = false;
+        }
+            
+        if (waitServiceForScene)
+        {
+            checkForScene = true;
+            waitServiceForScene = false;
+        }
+            
+    }
+
+
+    private void CheckUser()
+    {
+        identifying.GetComponent<Identifying>().Initialize(dtv, true);
+        checkForUser = true;
+    }
+
+
     private void OnUserIdentification()
     {
         checkForUser = false;
@@ -133,7 +219,6 @@ public class GuaranaManager : Formatter
     private void OnSceneReceive()
     {
         checkForScene = false;
-
         DownloadContent<string>(sceneMetadata.nodeSrc, SetSceneXML);
     }
 
@@ -187,7 +272,6 @@ public class GuaranaManager : Formatter
         {
             Destroy(xrcamera.transform.GetChild(i).gameObject);
         }
-        //Debug.Log("Received document termination");
     }
 
     
@@ -197,7 +281,10 @@ public class GuaranaManager : Formatter
         metadata.node = nodeid;
         metadata.eventType = Enum.GetName(typeof(EventType), evt).ToLower();
         metadata.transition = Enum.GetName(typeof(EventTransition), trans).ToLower() + "s";
-        metadata.user = activeUser.id;
+        if (sceneMetadata != null)
+            metadata.appId = sceneMetadata.appId;
+        if (activeUser != null)
+            metadata.user = activeUser.id;
 
         webservice.GetComponent<WebService>().SendMessage(metadata);
     }
@@ -277,12 +364,15 @@ public class GuaranaManager : Formatter
         if (url.StartsWith("http"))
         {
             HTTP http = new HTTP();
-            http.GetFile<T>(url, callback);
+            StartCoroutine(http.GetFile<T>(url, callback));
+        }
+        else if (canRequestForService)
+        {
+            StartCoroutine(dtv.CurrentService.GetAppsFiles<T>(sceneMetadata.appId, url, callback));
         }
         else
         {
-            DTV dtv = webservice.GetComponent<WebService>().GetDTV();
-            dtv.CurrentService.GetAppsFiles<T>(sceneMetadata.appId, url, callback);
+            Debug.Log("No bind toke available for Service Request");
         }
     }
 
@@ -292,6 +382,12 @@ public class GuaranaManager : Formatter
         if (src.StartsWith("rtp://") || src.StartsWith("rtsp://") || src.StartsWith("http://") || src.StartsWith("https://"))
         {
             return src;
+        }
+
+        if (!canRequestForService)
+        {
+            Debug.Log("No bind toke available for Service Request");
+            return "";
         }
 
         if (src.StartsWith("sbtvd-ts://"))
@@ -308,7 +404,6 @@ public class GuaranaManager : Formatter
             src = src.Substring(2);
         }
 
-        DTV dtv = webservice.GetComponent<WebService>().GetDTV();
         return dtv.CurrentService.GetAppsFilesURL(sceneMetadata.appId, src);
     }
 }

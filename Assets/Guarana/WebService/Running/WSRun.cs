@@ -4,7 +4,7 @@ using WebSocketSharp;
 public class WSRun : WSStep
 {
     private string nodeid;
-    
+
     void Start()
     {
         running = true;
@@ -44,7 +44,6 @@ public class WSRun : WSStep
         {
             Debug.Log("Message not recognized");
         }
-        //Debug.Log(data);
     }
 
 

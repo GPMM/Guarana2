@@ -10,11 +10,8 @@ public class RegisterDevice : WSStep
         msgBody = new DTVRemoteDeviceBody();
         msgBody.deviceClass = "Guarana";
 
-        msgBody.supportedFormats = new List<string>();
-        msgBody.supportedFormats.Add("application/x-ncl360");
-
-        msgBody.recognizableEvents = new List<string>();
-        msgBody.recognizableEvents.Add("view");
+        msgBody.supportedTypes = new List<string>();
+        msgBody.supportedTypes.Add("application/x-ncl360");
 
         running = true;
         StartCoroutine(dtv.PostRemoteDevice(msgBody, CompleteRegister));

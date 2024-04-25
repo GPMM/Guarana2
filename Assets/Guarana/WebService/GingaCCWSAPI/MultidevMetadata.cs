@@ -24,6 +24,7 @@ public class NodeMeta : MultidevMetadata
 public class ActionMeta : MultidevMetadata
 {
     public string node;
+    public string appId;
     public string eventType;
     public string action;
     public string value;
@@ -34,6 +35,7 @@ public class ActionMeta : MultidevMetadata
 public class TransitionMeta : MultidevMetadata
 {
     public string node;
+    public string appId;
     public string eventType;
     public string transition;
     public string value;

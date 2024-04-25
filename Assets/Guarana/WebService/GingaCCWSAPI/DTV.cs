@@ -139,7 +139,7 @@ public class DTV
         string body = JsonUtility.ToJson(msgBody);
         using (UnityWebRequest wr = UnityWebRequest.Post(url, body, api.PostMessageType))
         {
-            api.SetCurrentServiceHeaders(wr);
+            api.SetDTVHeaders(wr);
             yield return api.CreateRequestCoroutine<DTVRemoteDeviceReturn>(wr, callback);
         }
     }

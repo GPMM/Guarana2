@@ -120,6 +120,7 @@ public class WebService : MonoBehaviour
         //Notify that is running
         if (currentstate == "Running")
         {
+            transform.Find("Plane").gameObject.SetActive(false);
             onRunning(true);
         }
     }
