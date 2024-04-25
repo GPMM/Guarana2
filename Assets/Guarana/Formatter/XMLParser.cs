@@ -25,8 +25,8 @@ public class XMLParser
         conditions.Add("onPause", (EventType.PRESENTATION, EventTransition.PAUSE));
         conditions.Add("onResume", (EventType.PRESENTATION, EventTransition.RESUME));
         conditions.Add("onPrepare", (EventType.PREPARATION, EventTransition.STOP));
-        conditions.Add("onEnterView", (EventType.VIEW, EventTransition.START));
-        conditions.Add("onExitView", (EventType.VIEW, EventTransition.STOP));
+        conditions.Add("onBeginView", (EventType.VIEW, EventTransition.START));
+        conditions.Add("onEndView", (EventType.VIEW, EventTransition.STOP));
 
         actions = new Dictionary<string, (EventType, EventTransition)>();
         actions.Add("start", (EventType.PRESENTATION, EventTransition.START));
@@ -35,35 +35,6 @@ public class XMLParser
         actions.Add("pause", (EventType.PRESENTATION, EventTransition.PAUSE));
         actions.Add("resume", (EventType.PRESENTATION, EventTransition.RESUME));
         actions.Add("prepare", (EventType.PREPARATION, EventTransition.START));
-
-        //ncldtd = "< !DOCTYPE ncl360 [  \n" +
-        //            "< !ELEMENT region EMPTY>\n" +
-        //            "< !ELEMENT descriptor EMPTY>\n" +
-        //            "< !ELEMENT media EMPTY>\n" +
-
-        //            "< !ELEMENT head (region*, descriptor+)>\n" +
-        //            "< !ELEMENT body (media+)>\n" +
-        //            "< !ELEMENT ncl360 (head, body)>\n" +
-
-        //            "< !ATTLIST region id ID #REQUIRED>\n" +
-        //            "< !ATTLIST region polar CDATA #REQUIRED>\n" +
-        //            "< !ATTLIST region azimuthal CDATA #REQUIRED>\n" +
-        //            "< !ATTLIST region radius CDATA #REQUIRED>\n" +
-        //            "< !ATTLIST region width CDATA #IMPLIED>\n" +
-        //            "< !ATTLIST region height CDATA #IMPLIED>\n" +
-        //            "< !ATTLIST region zIndex CDATA #IMPLIED>\n" +
-        //            "< !ATTLIST region pin CDATA #IMPLIED>\n" +
-
-        //            "< !ATTLIST descriptor id ID #REQUIRED>\n" +
-        //            "< !ATTLIST descriptor region IDREF #REQUIRED>\n" +
-        //            "< !ATTLIST descriptor soundType CDATA #IMPLIED>\n" +
-        //            "< !ATTLIST descriptor volume CDATA #IMPLIED>\n" +
-        //            "< !ATTLIST descriptor dur CDATA #IMPLIED>\n" +
-
-        //            "< !ATTLIST media id ID #REQUIRED>\n" +
-        //            "< !ATTLIST media src CDATA #REQUIRED>\n" +
-        //            "< !ATTLIST media descriptor IDREF #REQUIRED>\n" +
-        //         "]>\n";
     }
 
 
@@ -233,7 +204,7 @@ public class XMLParser
 
     private void ParsePort(XmlNode node, Document doc)
     {
-        string nodeid = node.Attributes["media"].InnerText;
+        string nodeid = node.Attributes["component"].InnerText;
         if (doc.HasMedia(nodeid))
         {
             doc.AddPort(new Action(nodeid, EventType.PRESENTATION, EventTransition.START));
