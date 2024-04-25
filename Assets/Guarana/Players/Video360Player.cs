@@ -17,6 +17,7 @@ public class Video360Player : Player
     private RenderTexture equiAngCubeTexture;
 
     private Material _material;
+    private bool _checkPrepare = false;
 
 
     void Start()
@@ -27,7 +28,10 @@ public class Video360Player : Player
 
     void Update()
     {
-        //CheckView();
+        if (_checkPrepare)
+        {
+            Prepared(content.GetComponent<VideoPlayer>());
+        }
     }
 
 
@@ -59,13 +63,17 @@ public class Video360Player : Player
         video.prepareCompleted += Prepared;
         video.loopPointReached += NaturalEnd;
         video.Prepare();
-        Prepared(video);
+        _checkPrepare = true;
     }
 
 
     public void Prepared(VideoPlayer player)
     {
+        //if (player.isPrepared) //Bug: Prepare never finishes
+        //{
+        _checkPrepare = false;
         media.TriggerTransition(EventType.PREPARATION, EventTransition.STOP);
+        //}
     }
 
 

@@ -5,6 +5,7 @@ using UnityEngine.Video;
 
 public class Video2DPlayer : Player
 {
+    private bool _checkPrepare = false;
 
     void Start()
     {
@@ -15,6 +16,11 @@ public class Video2DPlayer : Player
     void Update()
     {
         CheckView();
+
+        if (_checkPrepare)
+        {
+            Prepared(content.GetComponent<VideoPlayer>());
+        }
     }
 
 
@@ -33,13 +39,17 @@ public class Video2DPlayer : Player
         video.prepareCompleted += Prepared;
         video.loopPointReached += NaturalEnd;
         video.Prepare();
-        Prepared(video);
+        _checkPrepare = true;
     }
 
 
     public void Prepared(VideoPlayer player)
     {
-        media.TriggerTransition(EventType.PREPARATION, EventTransition.STOP);
+        //if (player.isPrepared) //Bug: Prepare never finishes
+        //{
+            _checkPrepare = false;
+            media.TriggerTransition(EventType.PREPARATION, EventTransition.STOP);
+        //}
     }
 
 
