@@ -118,4 +118,11 @@ public class Event
 
         return true;
     }
+
+
+    public override string ToString()
+    {
+        string ret = "<" + mytype + ", " + mystate + ", " + occurrences + ">";
+        return ret;
+    }
 }
